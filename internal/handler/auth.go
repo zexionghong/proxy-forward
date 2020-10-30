@@ -14,11 +14,11 @@ var (
 	ERR_LOGIN_IN   = errors.New("fail to login")
 )
 
-//Auth provides basic authorization for proxy server.
-func (ps *ProxyServer) Auth(rw http.ResponseWriter, req *http.Request) bool {
+//Auth provides basic authorization for handler server.
+func (hs *HandlerServer) Auth(rw http.ResponseWriter, req *http.Request) bool {
 	var err error
 	if config.RuntimeViper.GetBool("server.auth") {
-		if err = ps.auth(rw, req); err != nil {
+		if _, err = hs.auth(rw, req); err != nil {
 			return false
 		}
 		return true
@@ -26,8 +26,8 @@ func (ps *ProxyServer) Auth(rw http.ResponseWriter, req *http.Request) bool {
 	return true
 }
 
-// Auth provides basic authorization for proxy server.
-func (ps *ProxyServer) auth(rw http.ResponseWriter, req *http.Request) (string, error) {
+// Auth provides basic authorization for handler server.
+func (hs *HandlerServer) auth(rw http.ResponseWriter, req *http.Request) (string, error) {
 	auth := req.Header.Get("Proxy-Authorization")
 	auth = strings.Replace(auth, "Basic ", "", 1)
 	if auth == "" {
