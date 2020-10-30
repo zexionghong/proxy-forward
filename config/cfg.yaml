@@ -1,0 +1,8 @@
+# yaml file for go-proxy
+
+title: "YAML config for go-proxy"
+
+server:
+  port: ":2333"
+  http_read_timeout: 10
+  http_write_timeout: 10
