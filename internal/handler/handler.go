@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"proxy-forward/config"
+	"proxy-forward/internal/proxy"
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
@@ -41,22 +42,23 @@ func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	// load travel
-	travel, err := hs.LoadTraveling(userToken)
-	if err != nil {
+	travel, ok := hs.LoadTraveling(userToken, rw, req)
+	if !ok {
+		return
 	}
 	defer hs.Done(rw, req)
 
 	if req.Method == "CONNECT" {
-		// ps.HttpsHandler(rw, req)
+		hs.HttpsHandler(travel, rw, req)
 	} else {
-		// ps.HttpHandler(rw, req)
+		hs.HttpHandler(travel, rw, req)
 	}
 }
 
 //HttpHandler handles http connections.
-func (hs *HandlerServer) HttpHandler(travel *http.Transport, rw http.ResponseWriter, req *http.Request) {
+func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
 	RmProxyHeaders(req)
-	resp, err := travel.RoundTrip(req)
+	resp, err := travel.Travel.RoundTrip(req)
 	if err != nil {
 		http.Error(rw, err.Error(), 500)
 		return
@@ -75,14 +77,14 @@ func (hs *HandlerServer) HttpHandler(travel *http.Transport, rw http.ResponseWri
 }
 
 // HttpsHandler handles any connection which needs "connect" method.
-func (hs *HandlerServer) HttpsHandler(travel *http.Transport, rw http.ResponseWriter, req *http.Request) {
+func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
 	hj, _ := rw.(http.Hijacker)
 	Client, _, err := hj.Hijack()
 	if err != nil {
 		http.Error(rw, "Failed", http.StatusBadRequest)
 		return
 	}
-	Remote, err := travel.Dial("tcp", req.URL.Host)
+	Remote, err := travel.Travel.Dial("tcp", req.URL.Host)
 	if err != nil {
 		http.Error(rw, "Failed", http.StatusBadGateway)
 		return

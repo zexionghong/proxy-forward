@@ -1,4 +1,4 @@
-package proxy_ip_service
+package ip_service
 
 import (
 	"encoding/json"
@@ -8,27 +8,28 @@ import (
 	"proxy-forward/pkg/logging"
 )
 
-type ProxyIP struct {
+type IP struct {
 	ID int
 }
 
-func (p *ProxyIP) GetByID() (*models.ProxyIP, error) {
-	var cacheProxyIP *models.ProxyIP
-	cache := cache_service.ProxyIP{ID: p.ID}
+func (ip *IP) GetByID() (*models.IP, error) {
+	var cacheIP *models.IP
+	cache := cache_service.IP{ID: ip.ID}
 	key := cache.GetKey()
 	if gredis.Exists(key) {
 		data, err := gredis.Get(key)
 		if err != nil {
 			logging.Log.Warn(err.Error())
 		} else {
-			json.Unmarshal(data, &cacheProxyIP)
-			return cacheProxyIP, nil
+			json.Unmarshal(data, &cacheIP)
+			return cacheIP, nil
 		}
 	}
-	proxyIP, err := models.GetProxyIPByID(p.ID)
+
+	iP, err := models.GetIPByID(ip.ID)
 	if err != nil {
 		return nil, err
 	}
-	gredis.Set(key, proxyIP, 60)
-	return proxyIP, nil
+	gredis.Set(key, iP, 3600)
+	return iP, nil
 }
