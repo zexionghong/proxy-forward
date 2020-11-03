@@ -35,12 +35,15 @@ func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}()
 
-	// TODO http Authorization
-	if !hs.Auth(rw, req) {
+	userToken, ok := hs.Auth(rw, req)
+	if !ok {
 		return
 	}
 
 	// load travel
+	travel, err := hs.LoadTraveling(userToken)
+	if err != nil {
+	}
 	defer hs.Done(rw, req)
 
 	if req.Method == "CONNECT" {

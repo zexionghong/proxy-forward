@@ -4,7 +4,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
-	"proxy-forward/config"
+	"proxy-forward/internal/models"
+	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/logging"
 	"strings"
 )
@@ -15,19 +16,16 @@ var (
 )
 
 //Auth provides basic authorization for handler server.
-func (hs *HandlerServer) Auth(rw http.ResponseWriter, req *http.Request) bool {
-	var err error
-	if config.RuntimeViper.GetBool("server.auth") {
-		if _, err = hs.auth(rw, req); err != nil {
-			return false
-		}
-		return true
+func (hs *HandlerServer) Auth(rw http.ResponseWriter, req *http.Request) (*models.UserToken, bool) {
+	userToken, err := hs.auth(rw, req)
+	if err != nil {
+		return nil, false
 	}
-	return true
+	return userToken, true
 }
 
 // Auth provides basic authorization for handler server.
-func (hs *HandlerServer) auth(rw http.ResponseWriter, req *http.Request) (string, error) {
+func (hs *HandlerServer) auth(rw http.ResponseWriter, req *http.Request) (*models.UserToken, error) {
 	auth := req.Header.Get("Proxy-Authorization")
 	auth = strings.Replace(auth, "Basic ", "", 1)
 	if auth == "" {
@@ -35,22 +33,23 @@ func (hs *HandlerServer) auth(rw http.ResponseWriter, req *http.Request) (string
 	}
 	data, err := base64.StdEncoding.DecodeString(auth)
 	if err != nil {
-		return "", ERR_PROXY_AUTH
+		return nil, ERR_PROXY_AUTH
 	}
 
-	var user, password string
+	var username, password string
 
 	userPasswordPair := strings.Split(string(data), ":")
 	if len(userPasswordPair) != 2 {
-		return "", ERR_LOGIN_IN
+		return nil, ERR_LOGIN_IN
 	}
-	user = userPasswordPair[0]
+	username = userPasswordPair[0]
 	password = userPasswordPair[1]
-	if Verify(user, password) == false {
+	userToken, ok := Verify(username, password)
+	if !ok {
 		NeedAuth(rw)
-		return "", ERR_LOGIN_IN
+		return nil, ERR_LOGIN_IN
 	}
-	return user, nil
+	return userToken, nil
 }
 
 func NeedAuth(rw http.ResponseWriter) {
@@ -64,9 +63,17 @@ func NeedAuth(rw http.ResponseWriter) {
 }
 
 // Verify verifies username and password
-func Verify(user, password string) bool {
-	if user != "" && password != "" {
-		return true
+func Verify(username, password string) (*models.UserToken, bool) {
+	if username != "" && password != "" {
+		userTokenService := user_token_service.UserToken{Username: username, Passwd: password}
+		userToken, err := userTokenService.Get()
+		if err != nil {
+			return nil, false
+		}
+		if userToken.ID == 0 {
+			return nil, false
+		}
+		return userToken, true
 	}
-	return false
+	return nil, false
 }
