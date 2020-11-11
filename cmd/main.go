@@ -3,12 +3,12 @@ package main
 import (
 	"proxy-forward/config"
 	"proxy-forward/internal/handler"
+	"proxy-forward/internal/models"
 	"proxy-forward/pkg/logging"
 )
 
 func init() {
-	logging.Setup()
-	// models.Setup()
+	models.Setup()
 }
 
 func main() {

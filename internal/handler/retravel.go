@@ -62,12 +62,13 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		return nil, err
 	}
 	remoteAddr = utils.InetNtoA(iP.IpAddr)
-	port = proxyIP.Port
+	port = proxyIP.ForwardPort
 	travel, ok := Connection(remoteAddr, port)
 	if !ok {
 		Unavailable(rw)
 		return nil, err
 	}
+	hs.Camp.Set(_cacheKey, travel)
 	return travel, nil
 }
 

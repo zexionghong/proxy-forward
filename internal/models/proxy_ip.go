@@ -2,10 +2,11 @@ package models
 
 type ProxyIP struct {
 	Model
-	PmID   int `json:"pm_id"`
-	Port   int `json:"port"`
-	IpID   int `json:"ip_id"`
-	Online int `json:"online"`
+	PmID        int `json:"pm_id"`
+	ForwardPort int `json:"forward_port"`
+	Port        int `json:"port"`
+	IpID        int `json:"ip_id"`
+	Online      int `json:"online"`
 }
 
 func (ProxyIP) TableName() string {

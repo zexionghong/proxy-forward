@@ -13,7 +13,7 @@ var (
 )
 
 // Setup initialize the log instance
-func Setup() {
+func init() {
 	Log = logrus.New()
 	Log.Out = os.Stdout
 	Log.WithFields(logrus.Fields{
