@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"proxy-forward/config"
 	"proxy-forward/internal/proxy"
+	"proxy-forward/pkg/logging"
 	"time"
 
 	cmap "github.com/orcaman/concurrent-map"
@@ -32,6 +33,7 @@ func NewHandlerServer() *http.Server {
 func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
+			logging.Log.Warnf("HandlerServer.ServeHTTP panic: %+v", err)
 			rw.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
