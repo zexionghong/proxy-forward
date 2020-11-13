@@ -1,4 +1,4 @@
-package handler
+package http_proxy
 
 import (
 	"fmt"
@@ -34,7 +34,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 	}
 	_cacheKey := fmt.Sprintf("%s_%d", CACHE_CAMP_PROXY, userToken.PiID)
-	if tmp, ok := hs.Camp.Get(_cacheKey); ok {
+	if tmp, ok := Camp.Get(_cacheKey); ok {
 		travel := tmp.(*proxy.ProxyServer)
 		return travel, nil
 	}
@@ -68,7 +68,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	hs.Camp.Set(_cacheKey, travel)
+	Camp.Set(_cacheKey, travel)
 	return travel, nil
 }
 

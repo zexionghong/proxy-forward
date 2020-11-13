@@ -2,7 +2,7 @@ package main
 
 import (
 	"proxy-forward/config"
-	"proxy-forward/internal/handler"
+	"proxy-forward/internal/http_proxy"
 	"proxy-forward/internal/models"
 	"proxy-forward/pkg/gredis"
 	"proxy-forward/pkg/logging"
@@ -14,7 +14,7 @@ func init() {
 }
 
 func main() {
-	goproxy := handler.NewHandlerServer()
+	goproxy := http_proxy.NewHandlerServer()
 	logging.Log.Infof("Start the proxy server in port:%s", config.RuntimeViper.GetString("server.port"))
-	logging.Log.Fatal(goproxy.ListenAndServe())
+	logging.Log.Fatal(goproxy.ProxyHandler.ListenAndServe())
 }

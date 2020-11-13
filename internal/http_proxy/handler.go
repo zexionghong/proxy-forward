@@ -1,4 +1,4 @@
-package handler
+package http_proxy
 
 import (
 	"io"
@@ -12,19 +12,28 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 )
 
-type HandlerServer struct {
-	//
-	Camp cmap.ConcurrentMap
+type HttpProxyServer struct {
+	ProxyHandler *http.Server
 }
 
+type HandlerServer struct {
+}
+
+var (
+	Camp cmap.ConcurrentMap
+)
+
 // NewHandlerServer returns a new handler server.
-func NewHandlerServer() *http.Server {
-	return &http.Server{
-		Addr:           config.RuntimeViper.GetString("server.port"),
-		Handler:        &HandlerServer{Camp: cmap.New()},
-		ReadTimeout:    time.Duration(config.RuntimeViper.GetInt("server.http_read_timeout")) * time.Second,
-		WriteTimeout:   time.Duration(config.RuntimeViper.GetInt("server.http_write_timeout")) * time.Second,
-		MaxHeaderBytes: 1 << 20,
+func NewHandlerServer() *HttpProxyServer {
+	Camp = cmap.New()
+	return &HttpProxyServer{
+		ProxyHandler: &http.Server{
+			Addr:           config.RuntimeViper.GetString("server.port"),
+			Handler:        &HandlerServer{},
+			ReadTimeout:    time.Duration(config.RuntimeViper.GetInt("server.http_read_timeout")) * time.Second,
+			WriteTimeout:   time.Duration(config.RuntimeViper.GetInt("server.http_write_timeout")) * time.Second,
+			MaxHeaderBytes: 1 << 20,
+		},
 	}
 }
 

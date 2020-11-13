@@ -1,4 +1,4 @@
-package handler
+package http_proxy
 
 var (
 	HTTP200 = []byte("HTTP/1.1 200 Connection Established\r\n\r\n")
