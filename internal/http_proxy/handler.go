@@ -2,6 +2,7 @@ package http_proxy
 
 import (
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"proxy-forward/config"
@@ -26,12 +27,14 @@ var (
 // NewHandlerServer returns a new handler server.
 func NewHandlerServer() *HttpProxyServer {
 	Camp = cmap.New()
+	mux := http.NewServeMux()
+	log.Println(mux)
 	return &HttpProxyServer{
 		ProxyHandler: &http.Server{
-			Addr:           config.RuntimeViper.GetString("server.port"),
+			Addr:           config.RuntimeViper.GetString("http_proxy_server.port"),
 			Handler:        &HandlerServer{},
-			ReadTimeout:    time.Duration(config.RuntimeViper.GetInt("server.http_read_timeout")) * time.Second,
-			WriteTimeout:   time.Duration(config.RuntimeViper.GetInt("server.http_write_timeout")) * time.Second,
+			ReadTimeout:    time.Duration(config.RuntimeViper.GetInt("http_proxy_server.http_read_timeout")) * time.Second,
+			WriteTimeout:   time.Duration(config.RuntimeViper.GetInt("http_proxy_server.http_write_timeout")) * time.Second,
 			MaxHeaderBytes: 1 << 20,
 		},
 	}
@@ -104,7 +107,6 @@ func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.Respons
 	_, _ = Client.Write(HTTP200)
 	go copyRemoteToClient(Remote, Client)
 	go copyRemoteToClient(Client, Remote)
-
 }
 
 func copyRemoteToClient(Remote, Client net.Conn) {
