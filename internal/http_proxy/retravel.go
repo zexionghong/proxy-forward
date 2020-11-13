@@ -49,6 +49,10 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
+	if proxyIP.Online == 0 {
+		Unavailable(rw)
+		return nil, err
+	}
 	proxyMachineService := proxy_machine_service.ProxyMachine{ID: proxyIP.PmID}
 	proxyMachine, err := proxyMachineService.GetByID()
 	if err != nil {
@@ -83,7 +87,7 @@ func Unavailable(rw http.ResponseWriter) {
 	if err != nil {
 		logging.Log.Warnf("fail to get TCP connection of client in Unavailable, %v", err)
 	}
-	_, _ = Client.Write(HTTP407)
+	_, _ = Client.Write(HTTP503)
 }
 
 // build tcp connection to remoteAddr:port

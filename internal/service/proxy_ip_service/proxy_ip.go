@@ -32,3 +32,12 @@ func (p *ProxyIP) GetByID() (*models.ProxyIP, error) {
 	gredis.Set(key, proxyIP, 60)
 	return proxyIP, nil
 }
+
+func (p *ProxyIP) DelteCache() (bool, error) {
+	cache := cache_service.ProxyIP{ID: p.ID}
+	key := cache.GetKey()
+	if gredis.Exists(key) {
+		return gredis.Delete(key)
+	}
+	return true, nil
+}

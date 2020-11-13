@@ -2,7 +2,6 @@ package http_proxy
 
 import (
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"proxy-forward/config"
@@ -10,11 +9,13 @@ import (
 	"proxy-forward/pkg/logging"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	cmap "github.com/orcaman/concurrent-map"
 )
 
 type HttpProxyServer struct {
 	ProxyHandler *http.Server
+	HttpHandler  *gin.Engine
 }
 
 type HandlerServer struct {
@@ -27,9 +28,9 @@ var (
 // NewHandlerServer returns a new handler server.
 func NewHandlerServer() *HttpProxyServer {
 	Camp = cmap.New()
-	mux := http.NewServeMux()
-	log.Println(mux)
+
 	return &HttpProxyServer{
+		HttpHandler: InitRouter(),
 		ProxyHandler: &http.Server{
 			Addr:           config.RuntimeViper.GetString("http_proxy_server.port"),
 			Handler:        &HandlerServer{},
