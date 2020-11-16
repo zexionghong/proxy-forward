@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/http"
 	"proxy-forward/config"
-	"proxy-forward/internal/proxy"
+	"proxy-forward/internal/http_proxy/proxy"
 	"proxy-forward/pkg/logging"
 	"time"
 

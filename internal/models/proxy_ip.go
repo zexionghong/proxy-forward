@@ -7,6 +7,7 @@ type ProxyIP struct {
 	Port        int `json:"port"`
 	IpID        int `json:"ip_id"`
 	Online      int `json:"online"`
+	Health      int `json:"health"`
 }
 
 func (ProxyIP) TableName() string {

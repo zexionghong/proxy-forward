@@ -3,6 +3,7 @@ package http_proxy
 import (
 	"fmt"
 	"net/http"
+	"proxy-forward/config"
 	"proxy-forward/internal/service/proxy_ip_service"
 	"proxy-forward/pkg/e"
 
@@ -19,7 +20,9 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.GET("/", indexHandler)
-	v1 := r.Group("/v1")
+	v1 := r.Group("/v1", gin.BasicAuth(gin.Accounts{
+		config.RuntimeViper.GetString("server.http_authorized_username"): config.RuntimeViper.GetString("server.http_authorized_password"),
+	}))
 	{
 		v1.POST("/destroy_ip", reportHandler)
 	}

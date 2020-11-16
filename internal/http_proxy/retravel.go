@@ -3,8 +3,8 @@ package http_proxy
 import (
 	"fmt"
 	"net/http"
+	"proxy-forward/internal/http_proxy/proxy"
 	"proxy-forward/internal/models"
-	"proxy-forward/internal/proxy"
 	"proxy-forward/internal/service/ip_service"
 	"proxy-forward/internal/service/proxy_ip_service"
 	"proxy-forward/internal/service/proxy_machine_service"
@@ -49,7 +49,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	if proxyIP.Online == 0 {
+	if proxyIP.Online != 1 || proxyIP.Health != 1 {
 		Unavailable(rw)
 		return nil, err
 	}
