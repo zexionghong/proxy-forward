@@ -1,4 +1,5 @@
 cfg.yaml
+.DS_Store
 
 init_winserver.exe
 proxy-forward
