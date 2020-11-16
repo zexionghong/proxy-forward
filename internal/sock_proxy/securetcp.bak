@@ -1,0 +1,84 @@
+package sock_proxy
+
+import (
+	"net"
+	"proxy-forward/config"
+	"proxy-forward/pkg/logging"
+
+	"github.com/gin-gonic/gin"
+	cmap "github.com/orcaman/concurrent-map"
+)
+
+type SockProxyServer struct {
+	SecureTcp   *net.TCPListener
+	HttpHandler *gin.Engine
+}
+
+var (
+	Camp cmap.ConcurrentMap
+)
+
+// NewSockProxyServer return a new sockproxy server
+func NewSockProxyServer() *SockProxyServer {
+	Camp = cmap.New()
+
+	listenAddr, err := net.ResolveTCPAddr("tcp", config.RuntimeViper.GetString("sock_proxy_server"))
+	if err != nil {
+		logging.Log.Fatal(err.Error())
+	}
+	listener, err := net.ListenTCP("tcp", listenAddr)
+	if err != nil {
+		logging.Log.Fatal(err.Error())
+	}
+	return &SockProxyServer{
+		SecureTcp: listener,
+	}
+}
+
+// see net.ListenTCP
+func (ss *SockProxyServer) ListenTCP() {
+	defer ss.SecureTcp.Close()
+
+	for {
+		localConn, err := ss.SecureTcp.AcceptTCP()
+		if err != nil {
+			logging.Log.Warnf("localConn accept tcp err: ", err.Error())
+			continue
+		}
+		// localConn被关闭时直接清除所有数据 不管没有发送的数据
+		localConn.SetLinger(0)
+		go ss.handleConn(localConn)
+	}
+}
+
+// handleConn handler client sock request
+func (ss *SockProxyServer) handleConn(client net.Conn) {
+	// 解 SOCKS5 协议
+	// https://www.ietf.org/rfc/rfc1928.txt
+	if client == nil {
+		return
+	}
+	defer client.Close()
+	var b [256]byte
+	n, err := client.Read(b[:])
+	if err != nil {
+		return
+	}
+	/**
+	   The localConn connects to the dstServer, and sends a ver
+	   identifier/method selection message:
+		          +----+----------+----------+
+		          |VER | NMETHODS | METHODS  |
+		          +----+----------+----------+
+		          | 1  |    1     | 1 to 255 |
+		          +----+----------+----------+
+	   The VER field is set to X'05' for this ver of the protocol.  The
+	   NMETHODS field contains the number of method identifier octets that
+	   appear in the METHODS field.
+	*/
+	// 第一个字段VER代表Socks的版本，Socks5默认为0x05，其固定长度为1个字节
+	if b[0] == 0x05 {
+		//  需要验证才可以正常使用
+		client.Write([]byte{0x05, 0x02})
+	}
+}
