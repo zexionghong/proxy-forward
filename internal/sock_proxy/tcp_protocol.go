@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"log"
 	"net"
-	"strconv"
 	"time"
 )
 
@@ -34,40 +34,50 @@ func (p *TCPProtocol) handshake(conn *net.TCPConn) error {
 	if err != nil {
 		return err
 	}
-	// addr
-	atyp, cmd, addrBytes, port, data, err := p.getAddr(conn)
-	if err != nil {
-		p.writeBuf(conn, data)
-		return err
-	} else {
-		p.cmd = cmd
-		p.atyp = atyp
-	}
-	switch p.atyp {
-	case ATYPIPv4:
-		p.ip = net.IPv4(addrBytes[0], addrBytes[1], addrBytes[2], addrBytes[3])
-	case ATYPIPv6:
-		p.ip = net.ParseIP(string(addrBytes))
-	case ATYPDomain:
-		p.domain = string(addrBytes)
-		if addr, er := net.ResolveIPAddr("ip", p.domain); er != nil {
-			p.writeBuf(conn, []byte{Version, 0x04, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+	/*
+		// addr
+		atyp, cmd, addrBytes, port, data, err := p.getAddr(conn)
+		if err != nil {
+			p.writeBuf(conn, data)
 			return err
 		} else {
-			p.ip = addr.IP
+			p.cmd = cmd
+			p.atyp = atyp
 		}
-	}
-	p.port = port
+		switch p.atyp {
+		case ATYPIPv4:
+			p.ip = net.IPv4(addrBytes[0], addrBytes[1], addrBytes[2], addrBytes[3])
+		case ATYPIPv6:
+			p.ip = net.ParseIP(string(addrBytes))
+		case ATYPDomain:
+			p.domain = string(addrBytes)
+			if addr, er := net.ResolveIPAddr("ip", p.domain); er != nil {
+				p.writeBuf(conn, []byte{Version, 0x04, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+				return err
+			} else {
+				p.ip = addr.IP
+			}
+		}
+		p.port = port
 
-	// check remote addr
-	switch p.cmd {
-	case CmdConnect:
-		if !p.ip.IsGlobalUnicast() || p.port <= 0 {
-			p.writeBuf(conn, []byte{Version, 0x02, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-			return errors.New("remote address error")
+		// check remote addr
+		switch p.cmd {
+		case CmdConnect:
+			if !p.ip.IsGlobalUnicast() || p.port <= 0 {
+				p.writeBuf(conn, []byte{Version, 0x02, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+				return errors.New("remote address error")
+			}
+		case CmdUdpAssociate:
+			p.viaUPD = true
 		}
-	case CmdUdpAssociate:
-		p.viaUPD = true
+	*/
+	return nil
+}
+
+func (p *TCPProtocol) handremoteshake(conn *net.TCPConn) error {
+	// version
+	if err := p.validVersion(conn); err != nil {
+		return err
 	}
 	return nil
 }
@@ -97,6 +107,26 @@ func (p *TCPProtocol) checkVersion(conn *net.TCPConn) ([]byte, error) {
 	} else {
 		return []byte{Version, MethodNoAuth}, nil
 	}
+}
+func (p *TCPProtocol) validVersion(conn *net.TCPConn) error { // 目标代理sock服务器无需校验 {0x05, 0x00}
+	var (
+		version   byte
+		methodLen int
+	)
+	log.Println(conn.RemoteAddr())
+	p.writeBuf(conn, []byte{Version, 0x01, 0x00})
+	log.Println("write success")
+	if buf, err := p.readBuf(conn, 2); err != nil {
+		return err
+	} else {
+		version = buf[0]
+		methodLen = int(buf[1])
+	}
+	log.Println(version, methodLen)
+	if version != Version || methodLen != 0 {
+		return errors.New("unsupported socks version")
+	}
+	return nil
 }
 func (p *TCPProtocol) checkAuth(conn *net.TCPConn) ([]byte, error) {
 	if p.authHandle == nil {
@@ -218,9 +248,97 @@ func (p *TCPProtocol) getAddr(conn *net.TCPConn) (atyp, cmd byte, addrBytes []by
 
 	return
 }
+func (p *TCPProtocol) validAddr(clientConn, remoteConn *net.TCPConn) (data []byte, err error) {
+	var (
+		bf   []byte
+		ver  byte
+		cmd  byte
+		atyp byte
+	)
+
+	if buf, er := p.readBuf(clientConn, 4); er != nil {
+		err = er
+		data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		return
+	} else {
+		ver = buf[0]
+		cmd = buf[1]
+		atyp = buf[3]
+		bf = append(bf, buf...)
+	}
+	if ver != Version {
+		err = errors.New("unsupported socks version")
+		data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		return
+	}
+	if bytes.IndexByte([]byte{CmdConnect, CmdUdpAssociate}, cmd) == -1 {
+		err = errors.New("unsupported CMD")
+		data = []byte{Version, 0x07, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		return
+	}
+
+	switch atyp {
+	case ATYPIPv4:
+		addrBytes, er := p.readBuf(clientConn, 4)
+		if err != nil {
+			err = er
+			data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			return
+		} else {
+			bf = append(bf, addrBytes...)
+		}
+	case ATYPDomain:
+		var domainLen int
+		if buf, er := p.readBuf(clientConn, 1); er != nil {
+			err = er
+			data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			return
+		} else {
+			domainLen = int(buf[0])
+			bf = append(bf, buf...)
+		}
+		if domainLen <= 0 {
+			err = errors.New("length of domain is zero")
+			data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			return
+		}
+		if buf, er := p.readBuf(clientConn, domainLen); er != nil {
+			err = er
+			data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			return
+		} else {
+			bf = append(bf, buf...)
+		}
+	case ATYPIPv6:
+		if buf, er := p.readBuf(clientConn, 16); er != nil {
+			err = er
+			data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+			return
+		} else {
+			bf = append(bf, buf...)
+		}
+	default:
+		err = errors.New("unsupported ATYP")
+		data = []byte{Version, 0x08, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		return
+	}
+	// 端口
+	if buf, er := p.readBuf(clientConn, 2); er != nil {
+		err = er
+		data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+		return
+	} else {
+		bf = append(bf, buf...)
+	}
+	p.writeBuf(remoteConn, bf)
+	cc := make([]byte, 1024)
+	log.Println(remoteConn.Read(cc))
+	return
+}
 
 func (p *TCPProtocol) networkString() string {
-	return p.ip.String() + ":" + strconv.Itoa(p.port)
+	// return p.ip.String() + ":" + strconv.Itoa(p.port)
+	return "127.0.0.1:4007"
 }
 
 func (p *TCPProtocol) readBuf(conn *net.TCPConn, ln int) ([]byte, error) {

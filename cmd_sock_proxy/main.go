@@ -3,15 +3,13 @@ package main
 import (
 	"os"
 	"proxy-forward/config"
-	"proxy-forward/internal/models"
 	"proxy-forward/internal/sock_proxy"
-	"proxy-forward/pkg/gredis"
 	"proxy-forward/pkg/logging"
 )
 
 func init() {
-	models.Setup()
-	gredis.Setup()
+	// models.Setup()
+	// gredis.Setup()
 }
 
 func main() {

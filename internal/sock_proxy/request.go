@@ -2,6 +2,7 @@ package sock_proxy
 
 import (
 	"encoding/binary"
+	"log"
 	"net"
 	"proxy-forward/pkg/logging"
 	"time"
@@ -60,6 +61,14 @@ func (r *Request) Process() {
 			return
 		} else {
 			r.RemoteConn = conn.(*net.TCPConn)
+			if err := r.tcpGram.validVersion(r.RemoteConn); err != nil {
+				log.Println(err)
+				return
+			}
+			if _, err := r.tcpGram.validAddr(r.ClientConn, r.RemoteConn); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
 		bindIP := r.ClientConn.LocalAddr().(*net.TCPAddr).IP
