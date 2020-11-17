@@ -1,6 +1,6 @@
 package sock_proxy
 
 // Auth provides basic authorization for handler server.
-func (ss *SockProxyServer) Auth() {
-
+func Auth(username, password string) bool {
+	return true
 }

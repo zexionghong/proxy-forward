@@ -64,6 +64,7 @@ func (s *Server) insertRequestList(l *RequestList) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// fifo 队列
 	if s.headRequest != nil {
 		s.headRequest.Prev = l
 		l.Next = s.headRequest
