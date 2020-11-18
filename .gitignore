@@ -3,3 +3,5 @@ cfg.yaml
 
 init_winserver.exe
 proxy-forward
+http-proxy-forward
+socks-proxy-forward
