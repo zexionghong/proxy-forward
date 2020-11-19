@@ -48,11 +48,11 @@ func (r *Request) Process() {
 
 	remoteAddr, err := r.tcpGram.networkString()
 	if err != nil {
-		_, _ = r.ClientConn.Write([]byte{Version, 0x04, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+		_, _ = r.ClientConn.Write([]byte{Version, 0x01, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 		return
 	}
 	if conn, err := net.DialTimeout("tcp", remoteAddr, time.Second*time.Duration(r.server.writeTimeout)); err != nil {
-		_, _ = r.ClientConn.Write([]byte{Version, 0x04, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+		_, _ = r.ClientConn.Write([]byte{Version, 0x01, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 		return
 	} else {
 		r.RemoteConn = conn.(*net.TCPConn)
@@ -82,6 +82,11 @@ func (r *Request) Process() {
 		r.transformTCP()
 	} else {
 		// bind UDP addr and answer
+		if !r.server.enableUPD {
+			_, _ = r.ClientConn.Write([]byte{Version, 0x07, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+			return
+		}
+		// 暂时不支持
 	}
 }
 
