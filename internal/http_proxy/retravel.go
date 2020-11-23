@@ -87,7 +87,7 @@ func Unavailable(rw http.ResponseWriter) {
 	if err != nil {
 		logging.Log.Warnf("fail to get TCP connection of client in Unavailable, %v", err)
 	}
-	_, _ = Client.Write(HTTP503)
+	_, _ = Client.Write(HTTP504)
 }
 
 // build tcp connection to remoteAddr:port
