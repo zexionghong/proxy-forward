@@ -44,7 +44,7 @@ func LoadRemoteAddr(userToken *models.UserToken) (string, error) {
 	if err != nil {
 		return "", errors.New("load remote addr fail.")
 	}
-	if proxyIP.Online != 1 && proxyIP.Health != 1 {
+	if proxyIP.Online != 1 && proxyIP.Health != 1 && proxyIP.Status != 1 {
 		return "", errors.New("load remote addr fail.")
 	}
 	proxyMachineService := proxy_machine_service.ProxyMachine{ID: proxyIP.PmID}

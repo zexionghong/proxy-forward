@@ -1,6 +1,7 @@
 package http_proxy
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -63,10 +64,19 @@ func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 	defer hs.Done(rw, req)
 
-	if req.Method == "CONNECT" {
-		hs.HttpsHandler(travel, rw, req)
-	} else {
-		hs.HttpHandler(travel, rw, req)
+	// http
+	if travel.OnlyHttp == true {
+		if req.Method == "CONNECT" {
+			hs.OnlyHttpsHandler(travel, rw, req)
+		} else {
+			hs.OnlyHttpHandler(travel, rw, req)
+		}
+	} else { // sock
+		if req.Method == "CONNECT" {
+			hs.HttpsHandler(travel, rw, req)
+		} else {
+			hs.HttpHandler(travel, rw, req)
+		}
 	}
 }
 
@@ -120,4 +130,49 @@ func copyRemoteToClient(Remote, Client net.Conn) {
 	if err != nil && err != io.EOF {
 		return
 	}
+}
+
+// OnlyHttp proxy handles http connections
+func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+	RmProxyHeaders(req)
+	resp, err := travel.Travel.RoundTrip(req)
+	if err != nil {
+		http.Error(rw, err.Error(), 500)
+		return
+	}
+	defer resp.Body.Close()
+
+	ClearHeaders(rw.Header())
+	CopyHeaders(rw.Header(), resp.Header)
+
+	rw.WriteHeader(resp.StatusCode)
+
+	_, err = io.Copy(rw, resp.Body)
+	if err != nil && err != io.EOF {
+		return
+	}
+}
+
+// // OnlyHttpsHandler handlers any connection which needs "connect" method.
+func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+	hj, _ := rw.(http.Hijacker)
+	Client, _, err := hj.Hijack()
+	if err != nil {
+		http.Error(rw, "Failed", http.StatusBadRequest)
+		return
+	}
+	parnetUrl, err := travel.Travel.Proxy(req)
+	if err != nil {
+		http.Error(rw, "Failed", http.StatusBadRequest)
+		return
+	}
+	Remote, err := net.Dial("tcp", parnetUrl.Host)
+	if err != nil {
+		http.Error(rw, "Failed", http.StatusBadGateway)
+		return
+	}
+	_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", req.Host)))
+
+	go copyRemoteToClient(Remote, Client)
+	go copyRemoteToClient(Client, Remote)
 }

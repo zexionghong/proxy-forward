@@ -3,6 +3,7 @@ package models
 type ProxyMachine struct {
 	Model
 	IpID int `json:"ip_id"`
+	PsID int `json:"ps_id"`
 }
 
 func (ProxyMachine) TableName() string {

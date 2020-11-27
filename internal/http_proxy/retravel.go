@@ -1,6 +1,7 @@
 package http_proxy
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"proxy-forward/internal/http_proxy/proxy"
@@ -8,6 +9,7 @@ import (
 	"proxy-forward/internal/service/ip_service"
 	"proxy-forward/internal/service/proxy_ip_service"
 	"proxy-forward/internal/service/proxy_machine_service"
+	"proxy-forward/internal/service/proxy_supplier_service"
 	"proxy-forward/pkg/logging"
 	"proxy-forward/pkg/utils"
 )
@@ -49,9 +51,9 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	if proxyIP.Online != 1 && proxyIP.Health != 1 {
+	if proxyIP.Online != 1 && proxyIP.Health != 1 && proxyIP.Status != 1 {
 		Unavailable(rw)
-		return nil, err
+		return nil, errors.New("proxy unavailable")
 	}
 	proxyMachineService := proxy_machine_service.ProxyMachine{ID: proxyIP.PmID}
 	proxyMachine, err := proxyMachineService.GetByID()
@@ -59,6 +61,13 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
+	proxySupplierService := proxy_supplier_service.ProxySupplier{ID: proxyMachine.PsID}
+	proxySupplier, err := proxySupplierService.GetByID()
+	if err != nil {
+		Unavailable(rw)
+		return nil, err
+	}
+
 	ipService := ip_service.IP{ID: proxyMachine.IpID}
 	iP, err := ipService.GetByID()
 	if err != nil {
@@ -67,7 +76,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 	}
 	remoteAddr = utils.InetNtoA(iP.IpAddr)
 	port = proxyIP.ForwardPort
-	travel, ok := Connection(remoteAddr, port)
+	travel, ok := Connection(remoteAddr, port, proxySupplier.OnlyHttp)
 	if !ok {
 		Unavailable(rw)
 		return nil, err
@@ -78,6 +87,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 
 // TODO: 流量统计 请求统计
 func (hs *HandlerServer) Done(rw http.ResponseWriter, req *http.Request) {
+	logging.Log.Infof("请求结束 URL:%s", req.URL)
 }
 
 func Unavailable(rw http.ResponseWriter) {
@@ -91,11 +101,11 @@ func Unavailable(rw http.ResponseWriter) {
 }
 
 // build tcp connection to remoteAddr:port
-func Connection(remoteAddr string, port int) (*proxy.ProxyServer, bool) {
+func Connection(remoteAddr string, port int, onlyHttp int) (*proxy.ProxyServer, bool) {
 	if remoteAddr == "" || port == 0 {
 		return nil, false
 	}
-	proxyServer, err := proxy.NewProxyServer(remoteAddr, port)
+	proxyServer, err := proxy.NewProxyServer(remoteAddr, port, onlyHttp)
 	if err != nil {
 		return nil, false
 	}
