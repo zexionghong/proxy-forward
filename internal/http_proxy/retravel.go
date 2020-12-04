@@ -51,7 +51,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	if proxyIP.Online != 1 && proxyIP.Health != 1 && proxyIP.Status != 1 {
+	if proxyIP.Online != 1 || proxyIP.Health != 1 || proxyIP.Status != 1 {
 		Unavailable(rw)
 		return nil, errors.New("proxy unavailable")
 	}
