@@ -30,6 +30,6 @@ func (u *UserToken) Get() (*models.UserToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	gredis.Set(key, userToken, 60)
+	gredis.Set(key, userToken, 120)
 	return userToken, nil
 }

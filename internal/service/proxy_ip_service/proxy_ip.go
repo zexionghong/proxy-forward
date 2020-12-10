@@ -29,7 +29,7 @@ func (p *ProxyIP) GetByID() (*models.ProxyIP, error) {
 	if err != nil {
 		return nil, err
 	}
-	gredis.Set(key, proxyIP, 60)
+	gredis.Set(key, proxyIP, 120)
 	return proxyIP, nil
 }
 

@@ -3,6 +3,7 @@ package http_proxy
 import (
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"proxy-forward/config"
@@ -111,7 +112,8 @@ func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.Respons
 	}
 	Remote, err := travel.Travel.Dial("tcp", req.URL.Host)
 	if err != nil {
-		http.Error(rw, "Failed", http.StatusBadGateway)
+		log.Println(Remote, err)
+		http.Error(nil, "Failed", http.StatusBadGateway)
 		return
 	}
 

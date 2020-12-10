@@ -30,6 +30,6 @@ func (p *ProxySupplier) GetByID() (*models.ProxySupplier, error) {
 	if err != nil {
 		return nil, err
 	}
-	gredis.Set(key, proxySupplier, 60)
+	gredis.Set(key, proxySupplier, 120)
 	return proxySupplier, nil
 }
