@@ -116,6 +116,8 @@ func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.Respons
 		http.Error(nil, "Failed", http.StatusBadGateway)
 		return
 	}
+	Client.SetDeadline(time.Now().Add(time.Second * 10))
+	Remote.SetDeadline(time.Now().Add(time.Second * 10))
 
 	_, _ = Client.Write(HTTP200)
 	go copyRemoteToClient(Remote, Client)
