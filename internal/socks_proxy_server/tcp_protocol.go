@@ -239,7 +239,7 @@ func (p *TCPProtocol) getAddr(remoteConn, clientConn *net.TCPConn) (atyp, cmd by
 	}
 
 	// port
-	if buf, er := p.readBuf(clientConn, 2); err != nil {
+	if buf, er := p.readBuf(clientConn, 2); er != nil {
 		err = er
 		data = []byte{Version, 0x05, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 		return
