@@ -46,7 +46,7 @@ func (r *Request) Process() {
 		return
 	}
 
-	remoteAddr, err := r.tcpGram.networkString()
+	remoteAddr, username, password, err := r.tcpGram.networkString()
 	if err != nil {
 		_, _ = r.ClientConn.Write([]byte{Version, 0x01, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 		return
@@ -57,7 +57,7 @@ func (r *Request) Process() {
 	} else {
 		r.RemoteConn = conn.(*net.TCPConn)
 	}
-	if err := r.tcpGram.handRemoteshke(r.RemoteConn, r.ClientConn); err != nil {
+	if err := r.tcpGram.handRemoteshke(r.RemoteConn, r.ClientConn, username, password); err != nil {
 		return
 	}
 

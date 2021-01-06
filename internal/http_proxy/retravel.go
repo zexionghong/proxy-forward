@@ -76,7 +76,7 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 	}
 	remoteAddr = utils.InetNtoA(iP.IpAddr)
 	port = proxyIP.ForwardPort
-	travel, ok := Connection(remoteAddr, port, proxySupplier.OnlyHttp)
+	travel, ok := Connection(remoteAddr, port, proxyIP.Username, proxyIP.Password, proxySupplier.OnlyHttp)
 	if !ok {
 		Unavailable(rw)
 		return nil, err
@@ -101,11 +101,11 @@ func Unavailable(rw http.ResponseWriter) {
 }
 
 // build tcp connection to remoteAddr:port
-func Connection(remoteAddr string, port int, onlyHttp int) (*proxy.ProxyServer, bool) {
+func Connection(remoteAddr string, port int, username, password string, onlyHttp int) (*proxy.ProxyServer, bool) {
 	if remoteAddr == "" || port == 0 {
 		return nil, false
 	}
-	proxyServer, err := proxy.NewProxyServer(remoteAddr, port, onlyHttp)
+	proxyServer, err := proxy.NewProxyServer(remoteAddr, port, username, password, onlyHttp)
 	if err != nil {
 		return nil, false
 	}

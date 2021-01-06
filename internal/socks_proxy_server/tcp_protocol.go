@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"proxy-forward/internal/models"
+	"proxy-forward/pkg/utils"
 	"time"
 )
 
@@ -38,8 +39,8 @@ func (p *TCPProtocol) handClientshake(conn *net.TCPConn) error {
 	}
 	return nil
 }
-func (p *TCPProtocol) handRemoteshke(remoteConn, clientConn *net.TCPConn) error {
-	if err := p.validRemoteVersion(remoteConn); err != nil {
+func (p *TCPProtocol) handRemoteshke(remoteConn, clientConn *net.TCPConn, username, password string) error {
+	if err := p.validRemoteVersion(remoteConn, username, password); err != nil {
 		return err
 	}
 	atyp, cmd, addrBytes, port, data, err := p.getAddr(remoteConn, clientConn)
@@ -104,22 +105,54 @@ func (p *TCPProtocol) checkVersion(conn *net.TCPConn) ([]byte, error) {
 		return []byte{Version, MethodNoAuth}, nil
 	}
 }
-func (p *TCPProtocol) validRemoteVersion(conn *net.TCPConn) error { // 目标代理 sockts5 服务器 无需校验 {0x05, 0x00}
+func (p *TCPProtocol) validRemoteVersion(conn *net.TCPConn, username, password string) error { // 目标代理 sockts5 服务器 无需校验 {0x05, 0x00}
 	var (
 		version   byte
 		methodLen int
 	)
-	p.writeBuf(conn, []byte{Version, 0x01, 0x00})
-	if buf, err := p.readBuf(conn, 2); err != nil {
-		return err
+	// 需要鉴权的远端sock服务器
+	if username != "" && password != "" {
+		p.writeBuf(conn, []byte{Version, 0x02, 0x00, 0x02})
+		if buf, err := p.readBuf(conn, 2); err != nil {
+			return err
+		} else {
+			version = buf[0]
+			methodLen = int(buf[1])
+		}
+		if version != Version || methodLen <= 0 {
+			return errors.New("unsupported socks version")
+		}
+		valid := []byte{0x01}
+		userLen := utils.B2mMap[len(username)]
+		valid = append(valid, userLen)
+		valid = append(valid, []byte(username)...)
+		passLen := utils.B2mMap[len(password)]
+		valid = append(valid, passLen)
+		valid = append(valid, []byte(password)...)
+		p.writeBuf(conn, valid)
+		if buf, err := p.readBuf(conn, 2); err != nil {
+			return err
+		} else {
+			version = buf[0]
+			methodLen = int(buf[1])
+		}
+		if methodLen != 0 {
+			return errors.New("unsupported socks version")
+		}
+		return nil
 	} else {
-		version = buf[0]
-		methodLen = int(buf[1])
+		p.writeBuf(conn, []byte{Version, 0x01, 0x00})
+		if buf, err := p.readBuf(conn, 2); err != nil {
+			return err
+		} else {
+			version = buf[0]
+			methodLen = int(buf[1])
+		}
+		if version != Version || methodLen != 0 {
+			return errors.New("unsupported socks version")
+		}
+		return nil
 	}
-	if version != Version || methodLen != 0 {
-		return errors.New("unsupported socks version")
-	}
-	return nil
 }
 func (p *TCPProtocol) checkAuth(conn *net.TCPConn) ([]byte, error) {
 	if p.authHandle == nil {
@@ -260,7 +293,7 @@ func (p *TCPProtocol) getAddr(remoteConn, clientConn *net.TCPConn) (atyp, cmd by
 	return
 }
 
-func (p *TCPProtocol) networkString() (string, error) {
+func (p *TCPProtocol) networkString() (string, string, string, error) {
 	return LoadRemoteAddr(p.userToken)
 }
 

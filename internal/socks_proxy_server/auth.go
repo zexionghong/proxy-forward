@@ -35,29 +35,29 @@ func Verify(username, password string) (*models.UserToken, bool) {
 	return nil, false
 }
 
-func LoadRemoteAddr(userToken *models.UserToken) (string, error) {
+func LoadRemoteAddr(userToken *models.UserToken) (string, string, string, error) {
 	if userToken == nil {
-		return "", errors.New("load remote addr fail.")
+		return "", "", "", errors.New("load remote addr fail.")
 	}
 	proxyIPService := proxy_ip_service.ProxyIP{ID: userToken.PiID}
 	proxyIP, err := proxyIPService.GetByID()
 	if err != nil {
-		return "", errors.New("load remote addr fail.")
+		return "", "", "", errors.New("load remote addr fail.")
 	}
 	if proxyIP.Online != 1 || proxyIP.Health != 1 || proxyIP.Status != 1 {
-		return "", errors.New("load remote addr fail.")
+		return "", "", "", errors.New("load remote addr fail.")
 	}
 	proxyMachineService := proxy_machine_service.ProxyMachine{ID: proxyIP.PmID}
 	proxyMachine, err := proxyMachineService.GetByID()
 	if err != nil {
-		return "", errors.New("load remote addr fail.")
+		return "", "", "", errors.New("load remote addr fail.")
 	}
 	ipService := ip_service.IP{ID: proxyMachine.IpID}
 	iP, err := ipService.GetByID()
 	if err != nil {
-		return "", errors.New("load remote addr fail.")
+		return "", "", "", errors.New("load remote addr fail.")
 	}
 	remoteAddr := utils.InetNtoA(iP.IpAddr)
 	port := proxyIP.ForwardPort
-	return fmt.Sprintf("%s:%d", remoteAddr, port), nil
+	return fmt.Sprintf("%s:%d", remoteAddr, port), proxyIP.Username, proxyIP.Password, nil
 }
