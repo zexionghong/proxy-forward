@@ -283,7 +283,7 @@ func (p *TCPProtocol) getAddr(remoteConn, clientConn *net.TCPConn) (atyp, cmd by
 	// remote handshake
 	p.writeBuf(remoteConn, abuf)
 	remoteBuf := make([]byte, 256)
-	_ = remoteConn.SetReadDeadline(time.Now().Add(time.Second * 10))
+	_ = remoteConn.SetReadDeadline(time.Now().Add(time.Second * 30))
 	remoteConn.Read(remoteBuf)
 	if remoteBuf[0] != Version || remoteBuf[1] != 0x00 {
 		data = remoteBuf
@@ -301,7 +301,7 @@ func (p *TCPProtocol) readBuf(conn *net.TCPConn, ln int) ([]byte, error) {
 	buf := make([]byte, ln)
 	curReadLen := 0
 	for curReadLen < ln {
-		_ = conn.SetReadDeadline(time.Now().Add(time.Second * 10))
+		_ = conn.SetReadDeadline(time.Now().Add(time.Second * 30))
 		l, err := conn.Read(buf[curReadLen:])
 		if err != nil {
 			return nil, err
@@ -313,7 +313,7 @@ func (p *TCPProtocol) readBuf(conn *net.TCPConn, ln int) ([]byte, error) {
 
 func (p *TCPProtocol) writeBuf(conn *net.TCPConn, data []byte) {
 	if data != nil && len(data) > 0 {
-		_ = conn.SetWriteDeadline(time.Now().Add(time.Second * 10))
+		_ = conn.SetWriteDeadline(time.Now().Add(time.Second * 30))
 		_, _ = conn.Write(data)
 	}
 }
