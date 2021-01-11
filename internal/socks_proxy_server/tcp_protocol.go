@@ -39,44 +39,46 @@ func (p *TCPProtocol) handClientshake(conn *net.TCPConn) error {
 	}
 	return nil
 }
-func (p *TCPProtocol) handRemoteshke(remoteConn, clientConn *net.TCPConn, username, password string) error {
+func (p *TCPProtocol) handRemoteshke(remoteConn, clientConn *net.TCPConn, username, password, remoteAddr string) error {
 	if err := p.validRemoteVersion(remoteConn, username, password); err != nil {
 		return err
 	}
-	atyp, cmd, addrBytes, port, data, err := p.getAddr(remoteConn, clientConn)
-	if err != nil {
-		p.writeBuf(clientConn, data)
-		return err
-	} else {
-		p.cmd = cmd
-		p.atyp = atyp
-	}
-	switch p.atyp {
-	case ATYPIPv4:
-		p.ip = net.IPv4(addrBytes[0], addrBytes[1], addrBytes[2], addrBytes[3])
-	case ATYPIPv6:
-		p.ip = net.ParseIP(string(addrBytes))
-	case ATYPDomain:
-		p.domain = string(addrBytes)
-		if addr, er := net.ResolveIPAddr("ip", p.domain); er != nil {
-			p.writeBuf(clientConn, []byte{Version, 0x04, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-			return er
+	/*
+		atyp, cmd, addrBytes, port, data, err := p.getAddr(remoteConn, clientConn)
+		if err != nil {
+			p.writeBuf(clientConn, data)
+			return err
 		} else {
-			p.ip = addr.IP
+			p.cmd = cmd
+			p.atyp = atyp
 		}
-	}
-	p.port = port
+		switch p.atyp {
+		case ATYPIPv4:
+			p.ip = net.IPv4(addrBytes[0], addrBytes[1], addrBytes[2], addrBytes[3])
+		case ATYPIPv6:
+			p.ip = net.ParseIP(string(addrBytes))
+		case ATYPDomain:
+			p.domain = string(addrBytes)
+			if addr, er := net.ResolveIPAddr("ip", p.domain); er != nil {
+				p.writeBuf(clientConn, []byte{Version, 0x04, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+				return er
+			} else {
+				p.ip = addr.IP
+			}
+		}
+		p.port = port
 
-	// check remote addr
-	switch p.cmd {
-	case CmdConnect:
-		if !p.ip.IsGlobalUnicast() || p.port <= 0 {
-			p.writeBuf(clientConn, []byte{Version, 0x02, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-			return errors.New("remote address error")
+		// check remote addr
+		switch p.cmd {
+		case CmdConnect:
+			if !p.ip.IsGlobalUnicast() || p.port <= 0 {
+				p.writeBuf(clientConn, []byte{Version, 0x02, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+				return errors.New("remote address error")
+			}
+		case CmdUdpAssociate:
+			p.viaUPD = true
 		}
-	case CmdUdpAssociate:
-		p.viaUPD = true
-	}
+	*/
 	return nil
 }
 

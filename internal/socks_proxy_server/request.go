@@ -1,7 +1,6 @@
 package socks_proxy_server
 
 import (
-	"encoding/binary"
 	"net"
 	"proxy-forward/pkg/logging"
 	"time"
@@ -57,37 +56,40 @@ func (r *Request) Process() {
 	} else {
 		r.RemoteConn = conn.(*net.TCPConn)
 	}
-	if err := r.tcpGram.handRemoteshke(r.RemoteConn, r.ClientConn, username, password); err != nil {
+	if err := r.tcpGram.handRemoteshke(r.RemoteConn, r.ClientConn, username, password, remoteAddr); err != nil {
 		return
 	}
+	r.transformTCP()
 
-	if !r.tcpGram.viaUPD { // tcp
-		bindIP := r.ClientConn.LocalAddr().(*net.TCPAddr).IP
-		res := make([]byte, 0, 22)
-		if ip := bindIP.To4(); ip != nil {
-			// IPv4, len is 4
-			res = append(res, []byte{Version, 0x00, 0x00, ATYPIPv4}...)
-			res = append(res, ip...)
+	/*
+		if !r.tcpGram.viaUPD { // tcp
+			bindIP := r.ClientConn.LocalAddr().(*net.TCPAddr).IP
+			res := make([]byte, 0, 22)
+			if ip := bindIP.To4(); ip != nil {
+				// IPv4, len is 4
+				res = append(res, []byte{Version, 0x00, 0x00, ATYPIPv4}...)
+				res = append(res, ip...)
+			} else {
+				// IPv6, len is 16
+				res = append(res, []byte{Version, 0x00, 0x00, ATYPIPv6}...)
+				res = append(res, bindIP...)
+			}
+			portByte := [2]byte{}
+			binary.BigEndian.PutUint16(portByte[:], uint16(r.ClientConn.LocalAddr().(*net.TCPAddr).Port))
+			res = append(res, portByte[:]...)
+			if _, err := r.ClientConn.Write(res); err != nil {
+				return
+			}
+			r.transformTCP()
 		} else {
-			// IPv6, len is 16
-			res = append(res, []byte{Version, 0x00, 0x00, ATYPIPv6}...)
-			res = append(res, bindIP...)
+			// bind UDP addr and answer
+			if !r.server.enableUPD {
+				_, _ = r.ClientConn.Write([]byte{Version, 0x07, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+				return
+			}
+			// 暂时不支持
 		}
-		portByte := [2]byte{}
-		binary.BigEndian.PutUint16(portByte[:], uint16(r.ClientConn.LocalAddr().(*net.TCPAddr).Port))
-		res = append(res, portByte[:]...)
-		if _, err := r.ClientConn.Write(res); err != nil {
-			return
-		}
-		r.transformTCP()
-	} else {
-		// bind UDP addr and answer
-		if !r.server.enableUPD {
-			_, _ = r.ClientConn.Write([]byte{Version, 0x07, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-			return
-		}
-		// 暂时不支持
-	}
+	*/
 }
 
 func (r *Request) transformTCP() {

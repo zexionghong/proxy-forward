@@ -10,6 +10,7 @@ require (
 	github.com/gomodule/redigo v2.0.1-0.20180401191855-9352ab68be13+incompatible
 	github.com/jinzhu/gorm v1.9.16
 	github.com/lxn/win v0.0.0-20201021184640-9c48443b1f44 // indirect
+	github.com/miekg/dns v1.0.14
 	github.com/orcaman/concurrent-map v0.0.0-20190826125027-8c72a8bb44f6
 	github.com/ouqiang/goproxy v1.1.0 // indirect
 	github.com/parnurzeal/gorequest v0.2.16 // indirect
