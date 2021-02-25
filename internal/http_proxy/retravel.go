@@ -2,7 +2,6 @@ package http_proxy
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"proxy-forward/internal/http_proxy/proxy"
 	"proxy-forward/internal/models"
@@ -17,10 +16,6 @@ import (
 func init() {
 }
 
-const (
-	CACHE_CAMP_PROXY = "CAMP_PROXY"
-)
-
 // Load username:password match ip:port sock connection
 func (hs *HandlerServer) LoadTraveling(userToken *models.UserToken, rw http.ResponseWriter, req *http.Request) (*proxy.ProxyServer, bool) {
 	travel, err := hs.loadTraveling(userToken, rw, req)
@@ -34,11 +29,6 @@ func (hs *HandlerServer) LoadTraveling(userToken *models.UserToken, rw http.Resp
 func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.ResponseWriter, req *http.Request) (*proxy.ProxyServer, error) {
 	if userToken == nil {
 		Unavailable(rw)
-	}
-	_cacheKey := fmt.Sprintf("%s_%d", CACHE_CAMP_PROXY, userToken.PiID)
-	if tmp, ok := Camp.Get(_cacheKey); ok {
-		travel := tmp.(*proxy.ProxyServer)
-		return travel, nil
 	}
 
 	var (
@@ -81,7 +71,6 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	Camp.Set(_cacheKey, travel)
 	return travel, nil
 }
 

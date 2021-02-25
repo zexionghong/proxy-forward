@@ -2,10 +2,8 @@ package proxy
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
-	"proxy-forward/pkg/logging"
 
 	px "golang.org/x/net/proxy"
 )
@@ -20,7 +18,6 @@ func NewProxyServer(remoteAddr string, port int, username, password string, only
 		dialer px.Dialer
 		err    error
 	)
-	logging.Log.Info(remoteAddr, port, username, password)
 	if onlyHttp == 0 {
 		if username == "" && password == "" {
 			dialer, err = px.SOCKS5("tcp", fmt.Sprintf("%s:%d", remoteAddr, port), nil, px.Direct)
@@ -51,7 +48,7 @@ func NewProxyServer(remoteAddr string, port int, username, password string, only
 			}, nil
 		} else {
 			u, err := url.Parse(fmt.Sprintf("http://%s:%s@%s:%d", username, password, remoteAddr, port))
-			log.Println(u, err)
+			// u, err := url.Parse(fmt.Sprintf("http://%s:%d", remoteAddr, port))
 			if err != nil {
 				return nil, err
 			}
@@ -59,6 +56,7 @@ func NewProxyServer(remoteAddr string, port int, username, password string, only
 				OnlyHttp: true,
 				Travel: &http.Transport{
 					Proxy: http.ProxyURL(u),
+					// TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 				},
 			}, nil
 		}

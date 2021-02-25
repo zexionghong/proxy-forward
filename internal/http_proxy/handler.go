@@ -1,6 +1,7 @@
 package http_proxy
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	cmap "github.com/orcaman/concurrent-map"
 )
 
 type HttpProxyServer struct {
@@ -23,13 +23,8 @@ type HttpProxyServer struct {
 type HandlerServer struct {
 }
 
-var (
-	Camp cmap.ConcurrentMap
-)
-
 // NewHandlerServer returns a new handler server.
 func NewHandlerServer() *HttpProxyServer {
-	Camp = cmap.New()
 
 	return &HttpProxyServer{
 		HttpHandler: InitRouter(),
@@ -159,6 +154,7 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 
 // // OnlyHttpsHandler handlers any connection which needs "connect" method.
 func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+	RmProxyHeaders(req)
 	hj, _ := rw.(http.Hijacker)
 	Client, _, err := hj.Hijack()
 	if err != nil {
@@ -172,10 +168,25 @@ func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.Res
 	}
 	Remote, err := net.Dial("tcp", parnetUrl.Host)
 	if err != nil {
+		logging.Log.Info(Remote, parnetUrl.Host, req.Host, err)
 		http.Error(rw, "Failed", http.StatusBadGateway)
 		return
 	}
-	_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", req.Host)))
+	username := parnetUrl.User.Username()
+	password, _ := parnetUrl.User.Password()
+	log.Println(username, password)
+
+	if username != "" && password != "" {
+		auth := fmt.Sprintf("%s:%s", username, password)
+		basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+		_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\nHost: %s\r\nProxy-Connection: Keey-Alive\r\nProxy-Authorization: %s\r\n\r\n", req.Host, req.Host, basicAuth)))
+	} else {
+		_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", req.Host)))
+	}
+
+	// c := fmt.Sprintf("CONNECT %s HTTP/1.1\r\nHost: %s\r\nProxy-Connection: Keey-Alive\r\nProxy-Authorization: %s\r\n\r\n", req.Host, req.Host, basicAuth)
+	// log.Println(c)
+	// _, _ = Remote.Write([]byte(c))
 
 	go copyRemoteToClient(Remote, Client)
 	go copyRemoteToClient(Client, Remote)

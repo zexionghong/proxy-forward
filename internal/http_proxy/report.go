@@ -47,10 +47,6 @@ func reportHandler(c *gin.Context) {
 	proxyIPService := proxy_ip_service.ProxyIP{ID: form.PiID}
 	proxyIPService.DelteCache()
 
-	_cacheKey := fmt.Sprintf("%s_%d", CACHE_CAMP_PROXY, form.PiID)
-	if _, ok := Camp.Get(_cacheKey); ok {
-		Camp.Remove(_cacheKey)
-	}
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 	return
 }
