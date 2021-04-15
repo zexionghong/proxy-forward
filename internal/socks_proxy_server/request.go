@@ -7,7 +7,8 @@ import (
 )
 
 type Request struct {
-	tcpGram TCPProtocol
+	tcpGram    TCPProtocol
+	remoteAddr string
 
 	ClientConn *net.TCPConn
 	RemoteConn *net.TCPConn
@@ -59,6 +60,7 @@ func (r *Request) Process() {
 	if err := r.tcpGram.handRemoteshke(r.RemoteConn, r.ClientConn, username, password, remoteAddr); err != nil {
 		return
 	}
+	r.remoteAddr = remoteAddr
 	r.transformTCP()
 
 	/*
@@ -93,18 +95,7 @@ func (r *Request) Process() {
 }
 
 func (r *Request) transformTCP() {
-	var (
-		target string
-	)
-	switch r.tcpGram.atyp {
-	case ATYPIPv4:
-		target = r.tcpGram.ip.String()
-	case ATYPIPv6:
-		target = r.tcpGram.ip.String()
-	case ATYPDomain:
-		target = r.tcpGram.domain
-	}
-	logging.Log.Infof("[%s]connect to: %s:%d", "tcp", target, r.tcpGram.port)
+	logging.Log.Infof("[%s]connect to: %s", "tcp", "tcp", r.remoteAddr)
 
 	done := make(chan int)
 	go func() {

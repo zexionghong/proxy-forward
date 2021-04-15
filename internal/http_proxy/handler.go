@@ -174,7 +174,7 @@ func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.Res
 	}
 	username := parnetUrl.User.Username()
 	password, _ := parnetUrl.User.Password()
-	log.Println(username, password)
+	// log.Println(username, password)
 
 	if username != "" && password != "" {
 		auth := fmt.Sprintf("%s:%s", username, password)
@@ -183,10 +183,6 @@ func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.Res
 	} else {
 		_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", req.Host)))
 	}
-
-	// c := fmt.Sprintf("CONNECT %s HTTP/1.1\r\nHost: %s\r\nProxy-Connection: Keey-Alive\r\nProxy-Authorization: %s\r\n\r\n", req.Host, req.Host, basicAuth)
-	// log.Println(c)
-	// _, _ = Remote.Write([]byte(c))
 
 	go copyRemoteToClient(Remote, Client)
 	go copyRemoteToClient(Client, Remote)

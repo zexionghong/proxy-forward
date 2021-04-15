@@ -11,6 +11,7 @@ import (
 	"proxy-forward/internal/service/proxy_supplier_service"
 	"proxy-forward/pkg/logging"
 	"proxy-forward/pkg/utils"
+	"strconv"
 )
 
 func init() {
@@ -64,7 +65,15 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	remoteAddr = utils.InetNtoA(iP.IpAddr)
+	if iP.IpAddress == "" {
+		remoteAddr = utils.InetNtoA(iP.IpAddr)
+	} else {
+		ipAddress, err := strconv.ParseInt(iP.IpAddress, 16, 0)
+		if err != nil {
+			return nil, err
+		}
+		remoteAddr = utils.InetNtoA(ipAddress)
+	}
 	port = proxyIP.ForwardPort
 	travel, ok := Connection(remoteAddr, port, proxyIP.Username, proxyIP.Password, proxySupplier.OnlyHttp)
 	if !ok {

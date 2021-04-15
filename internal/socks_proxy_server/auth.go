@@ -9,6 +9,7 @@ import (
 	"proxy-forward/internal/service/proxy_machine_service"
 	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/utils"
+	"strconv"
 )
 
 // Auth provides basid authorization for handler server.
@@ -36,6 +37,7 @@ func Verify(username, password string) (*models.UserToken, bool) {
 }
 
 func LoadRemoteAddr(userToken *models.UserToken) (string, string, string, error) {
+	var remoteAddr string
 	if userToken == nil {
 		return "", "", "", errors.New("load remote addr fail.")
 	}
@@ -57,7 +59,15 @@ func LoadRemoteAddr(userToken *models.UserToken) (string, string, string, error)
 	if err != nil {
 		return "", "", "", errors.New("load remote addr fail.")
 	}
-	remoteAddr := utils.InetNtoA(iP.IpAddr)
+	if iP.IpAddress == "" {
+		remoteAddr = utils.InetNtoA(iP.IpAddr)
+	} else {
+		ipAddress, err := strconv.ParseInt(iP.IpAddress, 16, 0)
+		if err != nil {
+			return "", "", "", errors.New("load remote addr fail.")
+		}
+		remoteAddr = utils.InetNtoA(ipAddress)
+	}
 	port := proxyIP.ForwardPort
 	return fmt.Sprintf("%s:%d", remoteAddr, port), proxyIP.Username, proxyIP.Password, nil
 }

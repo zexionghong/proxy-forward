@@ -2,7 +2,8 @@ package models
 
 type IP struct {
 	Model
-	IpAddr int64 `json:"ip"`
+	IpAddr    int64  `json:"ip_addr"`
+	IpAddress string `json:"ip_address"`
 }
 
 func (IP) TableName() string {
