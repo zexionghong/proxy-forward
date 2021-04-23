@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"proxy-forward/config"
 	"proxy-forward/internal/http_proxy/proxy"
+	"proxy-forward/internal/models"
+	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/logging"
 	"time"
 
@@ -63,21 +65,27 @@ func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	// http
 	if travel.OnlyHttp == true {
 		if req.Method == "CONNECT" {
-			hs.OnlyHttpsHandler(travel, rw, req)
+			hs.OnlyHttpsHandler(travel, rw, req, userToken)
 		} else {
-			hs.OnlyHttpHandler(travel, rw, req)
+			hs.OnlyHttpHandler(travel, rw, req, userToken)
 		}
 	} else { // sock
 		if req.Method == "CONNECT" {
-			hs.HttpsHandler(travel, rw, req)
+			hs.HttpsHandler(travel, rw, req, userToken)
 		} else {
-			hs.HttpHandler(travel, rw, req)
+			hs.HttpHandler(travel, rw, req, userToken)
 		}
 	}
 }
 
 //HttpHandler handles http connections.
-func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
+	// sock request 字节数
+	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	reqBytes, _ := httputil.DumpRequest(req, true)
+	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.SetReqUsageKey(userToken.ID)
+	//
 	RmProxyHeaders(req)
 	resp, err := travel.Travel.RoundTrip(req)
 	if err != nil {
@@ -90,6 +98,11 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 	CopyHeaders(rw.Header(), resp.Header)
 
 	rw.WriteHeader(resp.StatusCode)
+
+	respBytes, _ := httputil.DumpResponse(resp, true)
+	// sock reesponse 字节数
+	userTokenService.IncrRespBytes(len(respBytes))
+	userTokenService.SetRespUsageKey(userToken.ID)
 
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
@@ -98,7 +111,13 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 }
 
 // HttpsHandler handles any connection which needs "connect" method.
-func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
+	// sock request 字节数
+	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	reqBytes, _ := httputil.DumpRequest(req, true)
+	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.SetReqUsageKey(userToken.ID)
+	//
 	hj, _ := rw.(http.Hijacker)
 	Client, _, err := hj.Hijack()
 	if err != nil {
@@ -107,7 +126,6 @@ func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.Respons
 	}
 	Remote, err := travel.Travel.Dial("tcp", req.URL.Host)
 	if err != nil {
-		log.Println(Remote, err)
 		http.Error(nil, "Failed", http.StatusBadGateway)
 		return
 	}
@@ -115,24 +133,42 @@ func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.Respons
 	Remote.SetDeadline(time.Now().Add(time.Second * 60))
 
 	_, _ = Client.Write(HTTP200)
-	go copyRemoteToClient(Remote, Client)
-	go copyRemoteToClient(Client, Remote)
+	go copyRemoteToClient(Remote, Client, userToken, 1)
+	go copyRemoteToClient(Client, Remote, userToken, 2)
 }
 
-func copyRemoteToClient(Remote, Client net.Conn) {
+func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, action int) {
+	// aciont = 1  client => remote request
+	// action = 2 remote => client response
 	defer func() {
 		_ = Remote.Close()
 		_ = Client.Close()
 	}()
-
-	_, err := io.Copy(Remote, Client)
+	// 字节数
+	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	n, err := io.Copy(Remote, Client)
+	if n > 0 {
+		if action == 1 {
+			userTokenService.IncrReqBytes(int(n))
+			userTokenService.SetReqUsageKey(userToken.ID)
+		} else if action == 2 {
+			userTokenService.IncrRespBytes(int(n))
+			userTokenService.SetRespUsageKey(userToken.ID)
+		}
+	}
 	if err != nil && err != io.EOF {
 		return
 	}
 }
 
 // OnlyHttp proxy handles http connections
-func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
+	// request 字节数
+	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	reqBytes, _ := httputil.DumpRequest(req, true)
+	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.SetReqUsageKey(userToken.ID)
+	//
 	RmProxyHeaders(req)
 	resp, err := travel.Travel.RoundTrip(req)
 	if err != nil {
@@ -146,6 +182,10 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 
 	rw.WriteHeader(resp.StatusCode)
 
+	respBytes, _ := httputil.DumpResponse(resp, true)
+	// response 字节数
+	userTokenService.IncrRespBytes(len(respBytes))
+	userTokenService.SetRespUsageKey(userToken.ID)
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
 		return
@@ -153,8 +193,14 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 }
 
 // // OnlyHttpsHandler handlers any connection which needs "connect" method.
-func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request) {
+func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
 	RmProxyHeaders(req)
+	// request 字节数
+	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	reqBytes, _ := httputil.DumpRequest(req, true)
+	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.SetReqUsageKey(userToken.ID)
+	//
 	hj, _ := rw.(http.Hijacker)
 	Client, _, err := hj.Hijack()
 	if err != nil {
@@ -184,6 +230,6 @@ func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.Res
 		_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", req.Host)))
 	}
 
-	go copyRemoteToClient(Remote, Client)
-	go copyRemoteToClient(Client, Remote)
+	go copyRemoteToClient(Remote, Client, userToken, 1)
+	go copyRemoteToClient(Client, Remote, userToken, 2)
 }
