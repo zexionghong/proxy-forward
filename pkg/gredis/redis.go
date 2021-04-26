@@ -205,6 +205,24 @@ func Decr(key string, time int) (int64, error) {
 	return reply, nil
 }
 
+// incrby
+func Incrby(key string, inc int, time int) (int64, error) {
+	conn := RedisConn.Get()
+	defer conn.Close()
+
+	reply, err := redis.Int64(conn.Do("INCRBY", redis.Args{}.Add(key).AddFlat(inc)...))
+	if err != nil {
+		return 0, err
+	}
+	if time > 0 {
+		_, err = conn.Do("EXPIRE", key, time)
+		if err != nil {
+			return 0, err
+		}
+	}
+	return reply, nil
+}
+
 /*
 @Summary SetMapIncrByInt
 @Product SetMapIncr by key

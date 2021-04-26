@@ -2,13 +2,15 @@ package models
 
 type UserToken struct {
 	Model
-	Uid      int    `json:"uid"`
-	Username string `json:"username"`
-	Passwd   string `json:"passwd"`
-	PiID     int    `json:"pi_id"`
-	Requests int    `json:"requests"`
-	Traffic  int    `json:"traffic"`
-	Expired  int    `json:"expired"`
+	Uid             int    `json:"uid"`
+	Username        string `json:"username"`
+	Passwd          string `json:"passwd"`
+	PiID            int    `json:"pi_id"`
+	Requests        int    `json:"requests"`
+	Traffic         int    `json:"traffic"`
+	Expired         int    `json:"expired"`
+	ReqUsageAmount  int    `json:"req_usage_amount"`
+	RespUsageAmount int    `json:"resp_usage_amount"`
 }
 
 func (UserToken) TableName() string {
