@@ -1,7 +1,6 @@
 package socks_proxy_server
 
 import (
-	"log"
 	"net"
 	"proxy-forward/pkg/logging"
 	"time"
@@ -48,7 +47,6 @@ func (r *Request) Process() {
 	}
 
 	remoteAddr, username, password, err := r.tcpGram.networkString()
-	log.Println(remoteAddr, username, password, err)
 	if err != nil {
 		_, _ = r.ClientConn.Write([]byte{Version, 0x01, 0x00, ATYPIPv4, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
 		return
