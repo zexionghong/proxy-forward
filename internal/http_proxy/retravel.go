@@ -30,6 +30,9 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 	if userToken == nil {
 		Unavailable(rw)
 	}
+	if userToken.Expired == 1 {
+		Unavailable(rw)
+	}
 
 	var (
 		remoteAddr string

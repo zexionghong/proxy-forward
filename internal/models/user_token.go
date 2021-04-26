@@ -8,6 +8,7 @@ type UserToken struct {
 	PiID     int    `json:"pi_id"`
 	Requests int    `json:"requests"`
 	Traffic  int    `json:"traffic"`
+	Expired  int    `json:"expired"`
 }
 
 func (UserToken) TableName() string {
