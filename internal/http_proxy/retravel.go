@@ -61,22 +61,31 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-
-	ipService := ip_service.IP{ID: proxyMachine.IpID}
-	iP, err := ipService.GetByID()
-	if err != nil {
-		Unavailable(rw)
-		return nil, err
-	}
-	if iP.IpAddress == "" {
-		remoteAddr = utils.InetNtoA(iP.IpAddr)
-	} else {
-		ipAddress, err := strconv.ParseInt(iP.IpAddress, 16, 0)
-		if err != nil {
+	// luminati 直接调用域名
+	if proxyMachine.IpID == 0 {
+		if proxyMachine.Domain == "" {
+			Unavailable(rw)
 			return nil, err
 		}
-		remoteAddr = utils.InetNtoA(ipAddress)
+		remoteAddr = proxyMachine.Domain
+	} else {
+		ipService := ip_service.IP{ID: proxyMachine.IpID}
+		iP, err := ipService.GetByID()
+		if err != nil {
+			Unavailable(rw)
+			return nil, err
+		}
+		if iP.IpAddress == "" {
+			remoteAddr = utils.InetNtoA(iP.IpAddr)
+		} else {
+			ipAddress, err := strconv.ParseInt(iP.IpAddress, 16, 0)
+			if err != nil {
+				return nil, err
+			}
+			remoteAddr = utils.InetNtoA(ipAddress)
+		}
 	}
+
 	port = proxyIP.ForwardPort
 	travel, ok := Connection(remoteAddr, port, proxyIP.Username, proxyIP.Password, proxySupplier.OnlyHttp)
 	if !ok {
