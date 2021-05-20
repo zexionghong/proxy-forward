@@ -83,8 +83,8 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 	// sock request 字节数
 	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
 	reqBytes, _ := httputil.DumpRequest(req, true)
-	userTokenService.IncrReqBytes(len(reqBytes))
-	userTokenService.SetReqUsageKey(userToken.ID)
+	// userTokenService.IncrReqBytes(len(reqBytes))
+	// userTokenService.SetReqUsageKey(userToken.ID)
 	//
 	RmProxyHeaders(req)
 	resp, err := travel.Travel.RoundTrip(req)
@@ -93,6 +93,8 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 		return
 	}
 	defer resp.Body.Close()
+	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.SetReqUsageKey(userToken.ID)
 
 	ClearHeaders(rw.Header())
 	CopyHeaders(rw.Header(), resp.Header)
@@ -113,10 +115,10 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 // HttpsHandler handles any connection which needs "connect" method.
 func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
 	// sock request 字节数
-	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
-	reqBytes, _ := httputil.DumpRequest(req, true)
-	userTokenService.IncrReqBytes(len(reqBytes))
-	userTokenService.SetReqUsageKey(userToken.ID)
+	// userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	// reqBytes, _ := httputil.DumpRequest(req, true)
+	// userTokenService.IncrReqBytes(len(reqBytes))
+	// userTokenService.SetReqUsageKey(userToken.ID)
 	//
 	hj, _ := rw.(http.Hijacker)
 	Client, _, err := hj.Hijack()
@@ -151,9 +153,11 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 		if action == 1 {
 			userTokenService.IncrReqBytes(int(n))
 			userTokenService.SetReqUsageKey(userToken.ID)
+			fmt.Println("connect - client=>remote:", n)
 		} else if action == 2 {
 			userTokenService.IncrRespBytes(int(n))
 			userTokenService.SetRespUsageKey(userToken.ID)
+			fmt.Println("connect - remote=>client:", n)
 		}
 	}
 	if err != nil && err != io.EOF {
@@ -166,8 +170,8 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 	// request 字节数
 	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
 	reqBytes, _ := httputil.DumpRequest(req, true)
-	userTokenService.IncrReqBytes(len(reqBytes))
-	userTokenService.SetReqUsageKey(userToken.ID)
+	// userTokenService.IncrReqBytes(len(reqBytes))
+	// userTokenService.SetReqUsageKey(userToken.ID)
 	//
 	RmProxyHeaders(req)
 	resp, err := travel.Travel.RoundTrip(req)
@@ -176,6 +180,8 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 		return
 	}
 	defer resp.Body.Close()
+	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.SetReqUsageKey(userToken.ID)
 
 	ClearHeaders(rw.Header())
 	CopyHeaders(rw.Header(), resp.Header)
@@ -196,10 +202,10 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
 	RmProxyHeaders(req)
 	// request 字节数
-	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
-	reqBytes, _ := httputil.DumpRequest(req, true)
-	userTokenService.IncrReqBytes(len(reqBytes))
-	userTokenService.SetReqUsageKey(userToken.ID)
+	// userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	// reqBytes, _ := httputil.DumpRequest(req, true)
+	// userTokenService.IncrReqBytes(len(reqBytes))
+	// userTokenService.SetReqUsageKey(userToken.ID)
 	//
 	hj, _ := rw.(http.Hijacker)
 	Client, _, err := hj.Hijack()
