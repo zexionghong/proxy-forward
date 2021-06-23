@@ -30,9 +30,11 @@ func (hs *HandlerServer) LoadTraveling(userToken *models.UserToken, rw http.Resp
 func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.ResponseWriter, req *http.Request) (*proxy.ProxyServer, error) {
 	if userToken == nil {
 		Unavailable(rw)
+		return nil, errors.New("userToken is nil")
 	}
 	if userToken.Expired == 1 {
 		Unavailable(rw)
+		return nil, errors.New("userToken was expired")
 	}
 
 	var (

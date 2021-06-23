@@ -153,11 +153,9 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 		if action == 1 {
 			userTokenService.IncrReqBytes(int(n))
 			userTokenService.SetReqUsageKey(userToken.ID)
-			fmt.Println("connect - client=>remote:", n)
 		} else if action == 2 {
 			userTokenService.IncrRespBytes(int(n))
 			userTokenService.SetRespUsageKey(userToken.ID)
-			fmt.Println("connect - remote=>client:", n)
 		}
 	}
 	if err != nil && err != io.EOF {
@@ -226,7 +224,6 @@ func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.Res
 	}
 	username := parnetUrl.User.Username()
 	password, _ := parnetUrl.User.Password()
-	// log.Println(username, password)
 
 	if username != "" && password != "" {
 		auth := fmt.Sprintf("%s:%s", username, password)
