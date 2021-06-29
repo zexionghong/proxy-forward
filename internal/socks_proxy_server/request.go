@@ -2,6 +2,7 @@ package socks_proxy_server
 
 import (
 	"net"
+	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/logging"
 	"time"
 )
@@ -97,6 +98,7 @@ func (r *Request) Process() {
 func (r *Request) transformTCP() {
 	logging.Log.Infof("[%s]connect to: %s", "tcp", r.remoteAddr)
 
+	userTokenService := user_token_service.UserToken{ID: r.tcpGram.userToken.ID, ReqUsageAmount: r.tcpGram.userToken.ReqUsageAmount, RespUsageAmount: r.tcpGram.userToken.RespUsageAmount}
 	done := make(chan int)
 	go func() {
 		defer func() { _ = r.Close(); done <- 0 }()
@@ -110,6 +112,8 @@ func (r *Request) transformTCP() {
 				if _, err := r.ClientConn.Write(buf[:ln]); err != nil {
 					break
 				}
+				userTokenService.IncrRespBytes(ln)
+				userTokenService.SetRespUsageKey(r.tcpGram.userToken.ID)
 			}
 		}
 	}()
@@ -124,6 +128,8 @@ func (r *Request) transformTCP() {
 			if _, err := r.RemoteConn.Write(buf[:ln]); err != nil {
 				break
 			}
+			userTokenService.IncrReqBytes(ln)
+			userTokenService.SetReqUsageKey(r.tcpGram.userToken.ID)
 		}
 	}
 	_ = r.Close()

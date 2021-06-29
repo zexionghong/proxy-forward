@@ -40,8 +40,10 @@ func NewServer() *Server {
 // Serve Run
 func (s *Server) Run() error {
 	logging.Log.Info("start server on: %s", s.listener.Addr().String())
+	var er error
 	for {
 		conn, err := s.listener.AcceptTCP()
+		er = err
 		if err != nil {
 			break
 		}
@@ -49,7 +51,7 @@ func (s *Server) Run() error {
 	}
 	s.listener = nil
 	s.closeRequests()
-	return nil
+	return er
 }
 
 func (s *Server) closeRequests() {
