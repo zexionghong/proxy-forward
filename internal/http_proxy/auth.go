@@ -43,12 +43,21 @@ func (hs *HandlerServer) auth(rw http.ResponseWriter, req *http.Request) (*model
 		return nil, ERR_LOGIN_IN
 	}
 	username = userPasswordPair[0]
+	var suffix string
+	if strings.Contains(username, "-") {
+		temp := strings.Split(username, "-")
+		username = temp[0]
+		if len(temp) > 1 {
+			suffix = "-" + strings.Join(temp[1:], "-")
+		}
+	}
 	password = userPasswordPair[1]
 	userToken, ok := Verify(username, password)
 	if !ok {
 		NeedAuth(rw)
 		return nil, ERR_LOGIN_IN
 	}
+	userToken.Suffix = suffix
 	return userToken, nil
 }
 

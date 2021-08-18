@@ -88,8 +88,17 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		}
 	}
 
+	var username, password string
+	if userToken.IsApi == 1 {
+		username = proxyIP.Username + userToken.Suffix
+		password = proxyIP.Password
+	} else {
+		username = proxyIP.Username
+		password = proxyIP.Password
+	}
+
 	port = proxyIP.ForwardPort
-	travel, ok := Connection(remoteAddr, port, proxyIP.Username, proxyIP.Password, proxySupplier.OnlyHttp)
+	travel, ok := Connection(remoteAddr, port, username, password, proxySupplier.OnlyHttp)
 	if !ok {
 		Unavailable(rw)
 		return nil, err

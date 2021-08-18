@@ -12,6 +12,8 @@ type UserToken struct {
 	ReqUsageAmount  int    `json:"req_usage_amount"`
 	RespUsageAmount int    `json:"resp_usage_amount"`
 	PaywayID        int    `json:"payway_id"`
+	IsApi           int    `json:"is_api"`
+	Suffix          string
 }
 
 func (UserToken) TableName() string {
