@@ -1,12 +1,9 @@
 package socks_proxy_server
 
 import (
-	"errors"
 	"net"
 	"proxy-forward/config"
-	"proxy-forward/pkg/geolite"
 	"proxy-forward/pkg/logging"
-	"strings"
 	"sync"
 )
 
@@ -98,26 +95,7 @@ func connHandle(conn *net.TCPConn, s *Server) {
 		Prev: nil, Next: nil, Data: Request{ClientConn: conn, server: s},
 	}
 	s.insertRequestList(r)
-	err := chinaIpValid(conn)
-	if err == nil {
-		r.Data.Process()
-	}
+	r.Data.Process()
 	s.removeRequestList(r)
 	_ = r.Data.Close()
-}
-
-func chinaIpValid(conn *net.TCPConn) error {
-	remoteIpAddr := conn.RemoteAddr().String()
-	ipInfo := strings.Split(remoteIpAddr, ":")
-	if len(ipInfo) == 2 {
-		ip := net.ParseIP(ipInfo[0])
-		record, err := geolite.DB.City(ip)
-		if err != nil {
-			return nil
-		}
-		if record.Country.IsoCode == "CN" {
-			return errors.New("CN NOT SUPPORT")
-		}
-	}
-	return nil
 }

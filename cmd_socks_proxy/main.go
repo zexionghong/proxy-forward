@@ -5,7 +5,6 @@ import (
 	"proxy-forward/config"
 	"proxy-forward/internal/models"
 	"proxy-forward/internal/socks_proxy_server"
-	"proxy-forward/pkg/geolite"
 	"proxy-forward/pkg/gredis"
 	"proxy-forward/pkg/logging"
 )
@@ -13,7 +12,6 @@ import (
 func init() {
 	models.Setup()
 	gredis.Setup()
-	geolite.Setup()
 }
 
 func main() {
