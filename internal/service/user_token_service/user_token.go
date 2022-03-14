@@ -45,8 +45,18 @@ func (u *UserToken) IncrReqBytes(length int) error {
 		_, err := gredis.Incrby(key, length, 0)
 		return err
 	} else {
-		_, err := gredis.Incrby(key, u.ReqUsageAmount+length, 0)
-		return err
+		lock_key := "LOCK_" + key
+		lock, err := gredis.Incr(lock_key, 3)
+		if err != nil {
+			return err
+		}
+		if lock == 1 {
+			gredis.Delete(key)
+			_, err := gredis.Incrby(key, u.ReqUsageAmount+length, 0)
+			gredis.Expired(lock_key, 1)
+			return err
+		}
+		return nil
 	}
 }
 
@@ -57,8 +67,18 @@ func (u *UserToken) IncrRespBytes(length int) error {
 		_, err := gredis.Incrby(key, length, 0)
 		return err
 	} else {
-		_, err := gredis.Incrby(key, u.RespUsageAmount+length, 0)
-		return err
+		lock_key := "LOCK_" + key
+		lock, err := gredis.Incr(lock_key, 3)
+		if err != nil {
+			return err
+		}
+		if lock == 1 {
+			gredis.Delete(key)
+			_, err := gredis.Incrby(key, u.RespUsageAmount+length, 0)
+			gredis.Expired(lock_key, 1)
+			return err
+		}
+		return nil
 	}
 }
 
