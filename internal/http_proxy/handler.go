@@ -54,6 +54,11 @@ func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !ok {
 		return
 	}
+	// preload url 预加载对黑名单域名的检查
+	ok = hs.PreloadReq(userToken, rw, req)
+	if !ok {
+		return
+	}
 
 	// load travel
 	travel, ok := hs.LoadTraveling(userToken, rw, req)

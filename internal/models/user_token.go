@@ -13,6 +13,8 @@ type UserToken struct {
 	RespUsageAmount int    `json:"resp_usage_amount"`
 	PaywayID        int    `json:"payway_id"`
 	IsApi           int    `json:"is_api"`
+	LaID            int    `json:"la_id"`
+	PsID            int    `json:"ps_id"`
 	Suffix          string
 }
 
