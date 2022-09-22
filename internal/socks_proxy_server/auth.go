@@ -44,6 +44,9 @@ func LoadRemoteAddr(userToken *models.UserToken) (string, string, string, error)
 	if userToken.Expired == 1 {
 		return "", "", "", errors.New("user token expired.")
 	}
+	if userToken.IsDeleted == 1 {
+		return "", "", "", errors.New("load remote addr fail.")
+	} 
 	proxyIPService := proxy_ip_service.ProxyIP{ID: userToken.PiID}
 	proxyIP, err := proxyIPService.GetByID()
 	if err != nil {

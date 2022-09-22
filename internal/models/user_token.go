@@ -16,6 +16,7 @@ type UserToken struct {
 	LaID            int    `json:"la_id"`
 	PsID            int    `json:"ps_id"`
 	Suffix          string
+	IsDeleted		int    `json:"is_deleted"`
 }
 
 func (UserToken) TableName() string {

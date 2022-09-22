@@ -1,5 +1,7 @@
 cfg.yaml
 .DS_Store
+/.idea
+/.vscode
 
 init_winserver.exe
 proxy-forward

@@ -36,7 +36,10 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, errors.New("userToken was expired")
 	}
-
+	if userToken.IsDeleted == 1 {
+		Unavailable(rw)
+		return nil, errors.New("proxy unavailable")
+	}
 	var (
 		remoteAddr string
 		port       int
