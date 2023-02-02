@@ -112,7 +112,7 @@ func (r *Request) transformTCP() {
 				if _, err := r.ClientConn.Write(buf[:ln]); err != nil {
 					break
 				}
-				userTokenService.IncrRespBytes(ln)
+				userTokenService.IncrRespBytes(r.remoteAddr, ln)
 				userTokenService.SetRespUsageKey(r.tcpGram.userToken.ID)
 			}
 		}
@@ -128,7 +128,7 @@ func (r *Request) transformTCP() {
 			if _, err := r.RemoteConn.Write(buf[:ln]); err != nil {
 				break
 			}
-			userTokenService.IncrReqBytes(ln)
+			userTokenService.IncrReqBytes(r.remoteAddr, ln)
 			userTokenService.SetReqUsageKey(r.tcpGram.userToken.ID)
 		}
 	}

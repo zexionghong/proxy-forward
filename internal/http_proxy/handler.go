@@ -96,7 +96,7 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 		return
 	}
 	defer resp.Body.Close()
-	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.IncrReqBytes(req.URL.Host, len(reqBytes))
 	userTokenService.SetReqUsageKey(userToken.ID)
 
 	ClearHeaders(rw.Header())
@@ -106,7 +106,7 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 
 	respBytes, _ := httputil.DumpResponse(resp, true)
 	// sock reesponse 字节数
-	userTokenService.IncrRespBytes(len(respBytes))
+	userTokenService.IncrRespBytes(req.URL.Host, len(respBytes))
 	userTokenService.SetRespUsageKey(userToken.ID)
 
 	_, err = io.Copy(rw, resp.Body)
@@ -134,11 +134,11 @@ func (hs *HandlerServer) HttpsHandler(travel *proxy.ProxyServer, rw http.Respons
 	Remote.SetDeadline(time.Now().Add(time.Second * 60))
 
 	_, _ = Client.Write(HTTP200)
-	go copyRemoteToClient(Remote, Client, userToken, 1)
-	go copyRemoteToClient(Client, Remote, userToken, 2)
+	go copyRemoteToClient(Remote, Client, userToken, 1, req.URL.Host)
+	go copyRemoteToClient(Client, Remote, userToken, 2, req.URL.Host)
 }
 
-func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, action int) {
+func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, action int, host string) {
 	// aciont = 1  client => remote request
 	// action = 2 remote => client response
 	defer func() {
@@ -150,10 +150,10 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 	n, err := io.Copy(Remote, Client)
 	if n > 0 {
 		if action == 1 {
-			userTokenService.IncrReqBytes(int(n))
+			userTokenService.IncrReqBytes(host, int(n))
 			userTokenService.SetReqUsageKey(userToken.ID)
 		} else if action == 2 {
-			userTokenService.IncrRespBytes(int(n))
+			userTokenService.IncrRespBytes(host, int(n))
 			userTokenService.SetRespUsageKey(userToken.ID)
 		}
 	}
@@ -175,7 +175,7 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 		return
 	}
 	defer resp.Body.Close()
-	userTokenService.IncrReqBytes(len(reqBytes))
+	userTokenService.IncrReqBytes(req.URL.Host, len(reqBytes))
 	userTokenService.SetReqUsageKey(userToken.ID)
 
 	ClearHeaders(rw.Header())
@@ -185,7 +185,7 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 
 	respBytes, _ := httputil.DumpResponse(resp, true)
 	// response 字节数
-	userTokenService.IncrRespBytes(len(respBytes))
+	userTokenService.IncrRespBytes(req.URL.Host, len(respBytes))
 	userTokenService.SetRespUsageKey(userToken.ID)
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
@@ -224,6 +224,6 @@ func (hs *HandlerServer) OnlyHttpsHandler(travel *proxy.ProxyServer, rw http.Res
 		_, _ = Remote.Write([]byte(fmt.Sprintf("CONNECT %s HTTP/1.1\r\n\r\n", req.Host)))
 	}
 
-	go copyRemoteToClient(Remote, Client, userToken, 1)
-	go copyRemoteToClient(Client, Remote, userToken, 2)
+	go copyRemoteToClient(Remote, Client, userToken, 1, req.URL.Host)
+	go copyRemoteToClient(Client, Remote, userToken, 2, req.URL.Host)
 }

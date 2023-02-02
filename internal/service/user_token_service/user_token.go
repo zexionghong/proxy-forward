@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"proxy-forward/internal/models"
 	"proxy-forward/internal/service/cache_service"
+	"proxy-forward/pkg/gcelery"
 	"proxy-forward/pkg/gredis"
 	"proxy-forward/pkg/logging"
 	"strconv"
+	"time"
 )
 
 type UserToken struct {
@@ -38,7 +40,16 @@ func (u *UserToken) Get() (*models.UserToken, error) {
 	return userToken, nil
 }
 
-func (u *UserToken) IncrReqBytes(length int) error {
+func (u *UserToken) IncrReqBytes(remoteAddr string, length int) error {
+	// usage statistics
+	data := map[string]interface{}{
+		"remote_addr":   remoteAddr,
+		"usage":         length,
+		"user_token_id": u.ID,
+		"type":          "req",
+		"timestamp":     time.Now().UnixMicro(),
+	}
+	gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
 	key := cache.GetIncrReqKey()
 	if gredis.Exists(key) {
@@ -60,7 +71,16 @@ func (u *UserToken) IncrReqBytes(length int) error {
 	}
 }
 
-func (u *UserToken) IncrRespBytes(length int) error {
+func (u *UserToken) IncrRespBytes(remoteAddr string, length int) error {
+	// usage statistics
+	data := map[string]interface{}{
+		"remote_addr":   remoteAddr,
+		"usage":         length,
+		"user_token_id": u.ID,
+		"type":          "resp",
+		"timestamp":     time.Now().UnixMicro(),
+	}
+	gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
 	key := cache.GetIncrRespKey()
 	if gredis.Exists(key) {
