@@ -47,7 +47,7 @@ func (u *UserToken) IncrReqBytes(remoteAddr string, length int) error {
 		"usage":         length,
 		"user_token_id": u.ID,
 		"type":          "req",
-		"timestamp":     time.Now().UnixMicro(),
+		"timestamp":     int64(time.Now().Unix()),
 	}
 	gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
@@ -78,7 +78,7 @@ func (u *UserToken) IncrRespBytes(remoteAddr string, length int) error {
 		"usage":         length,
 		"user_token_id": u.ID,
 		"type":          "resp",
-		"timestamp":     time.Now().UnixMicro(),
+		"timestamp":     int64(time.Now().Unix()),
 	}
 	gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
