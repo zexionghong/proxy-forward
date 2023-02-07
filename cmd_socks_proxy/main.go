@@ -6,6 +6,7 @@ import (
 	"proxy-forward/internal/models"
 	"proxy-forward/internal/socks_proxy_server"
 	"proxy-forward/pkg/gcelery"
+	"proxy-forward/pkg/gmongo"
 	"proxy-forward/pkg/gredis"
 	"proxy-forward/pkg/logging"
 )
@@ -14,6 +15,7 @@ func init() {
 	models.Setup()
 	gredis.Setup()
 	gcelery.Setup()
+	gmongo.Setup()
 }
 
 func main() {

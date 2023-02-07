@@ -4,11 +4,15 @@ import (
 	"encoding/json"
 	"proxy-forward/internal/models"
 	"proxy-forward/internal/service/cache_service"
-	"proxy-forward/pkg/gcelery"
+
+	// "proxy-forward/pkg/gcelery"
+	"proxy-forward/pkg/gmongo"
 	"proxy-forward/pkg/gredis"
 	"proxy-forward/pkg/logging"
 	"strconv"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type UserToken struct {
@@ -17,6 +21,10 @@ type UserToken struct {
 	Passwd          string
 	ReqUsageAmount  int
 	RespUsageAmount int
+	PsID            int
+	IsStatic        int
+	LaID            int
+	Uid             int
 }
 
 func (u *UserToken) Get() (*models.UserToken, error) {
@@ -42,14 +50,20 @@ func (u *UserToken) Get() (*models.UserToken, error) {
 
 func (u *UserToken) IncrReqBytes(remoteAddr string, length int) error {
 	// usage statistics
-	data := map[string]interface{}{
+	// data := map[string]interface{}{
+	data := bson.M{
 		"remote_addr":   remoteAddr,
 		"usage":         length,
 		"user_token_id": u.ID,
 		"type":          "req",
+		"ps_id":         u.PsID,
+		"la_id":         u.LaID,
+		"is_static":     u.IsStatic,
+		"uid":           u.Uid,
 		"timestamp":     int64(time.Now().Unix()),
 	}
-	gcelery.SendForwardDataTask(data)
+	gmongo.SaveForwardData(data)
+	// gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
 	key := cache.GetIncrReqKey()
 	if gredis.Exists(key) {
@@ -73,14 +87,20 @@ func (u *UserToken) IncrReqBytes(remoteAddr string, length int) error {
 
 func (u *UserToken) IncrRespBytes(remoteAddr string, length int) error {
 	// usage statistics
-	data := map[string]interface{}{
+	// data := map[string]interface{}{
+	data := bson.M{
 		"remote_addr":   remoteAddr,
 		"usage":         length,
 		"user_token_id": u.ID,
 		"type":          "resp",
+		"ps_id":         u.PsID,
+		"la_id":         u.LaID,
+		"is_static":     u.IsStatic,
+		"uid":           u.Uid,
 		"timestamp":     int64(time.Now().Unix()),
 	}
-	gcelery.SendForwardDataTask(data)
+	gmongo.SaveForwardData(data)
+	// gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
 	key := cache.GetIncrRespKey()
 	if gredis.Exists(key) {

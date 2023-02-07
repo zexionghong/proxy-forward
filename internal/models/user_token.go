@@ -15,8 +15,9 @@ type UserToken struct {
 	IsApi           int    `json:"is_api"`
 	LaID            int    `json:"la_id"`
 	PsID            int    `json:"ps_id"`
+	IsDeleted       int    `json:"is_deleted"`
+	IsStatic        int    `json:"is_static"`
 	Suffix          string
-	IsDeleted		int    `json:"is_deleted"`
 }
 
 func (UserToken) TableName() string {

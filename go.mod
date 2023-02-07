@@ -13,8 +13,7 @@ require (
 	github.com/ouqiang/goproxy v1.1.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.7.1
-	github.com/stretchr/testify v1.5.1 // indirect
-	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
-	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13 // indirect
-	golang.org/x/text v0.3.2
+	go.mongodb.org/mongo-driver v1.11.1
+	golang.org/x/net v0.5.0
+	golang.org/x/text v0.6.0
 )
