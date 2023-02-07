@@ -17,6 +17,7 @@ type UserToken struct {
 	PsID            int    `json:"ps_id"`
 	IsDeleted       int    `json:"is_deleted"`
 	IsStatic        int    `json:"is_static"`
+	DataCenter      int    `json:"data_center"`
 	Suffix          string
 }
 

@@ -23,6 +23,7 @@ type UserToken struct {
 	RespUsageAmount int
 	PsID            int
 	IsStatic        int
+	DataCenter      int
 	LaID            int
 	Uid             int
 }
@@ -59,6 +60,7 @@ func (u *UserToken) IncrReqBytes(remoteAddr string, length int) error {
 		"ps_id":         u.PsID,
 		"la_id":         u.LaID,
 		"is_static":     u.IsStatic,
+		"data_center":   u.DataCenter,
 		"uid":           u.Uid,
 		"timestamp":     int64(time.Now().Unix()),
 	}
@@ -96,6 +98,7 @@ func (u *UserToken) IncrRespBytes(remoteAddr string, length int) error {
 		"ps_id":         u.PsID,
 		"la_id":         u.LaID,
 		"is_static":     u.IsStatic,
+		"data_center":   u.DataCenter,
 		"uid":           u.Uid,
 		"timestamp":     int64(time.Now().Unix()),
 	}
