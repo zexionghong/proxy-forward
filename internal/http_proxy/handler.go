@@ -40,8 +40,8 @@ func NewHandlerServer() *HttpProxyServer {
 	}
 }
 
-//ServeHTTP will be automatically called by system.
-//HandlerServer implements the Handler interface which need ServeHTTP.
+// ServeHTTP will be automatically called by system.
+// HandlerServer implements the Handler interface which need ServeHTTP.
 func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -83,10 +83,19 @@ func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//HttpHandler handles http connections.
+// HttpHandler handles http connections.
 func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
 	// sock request 字节数
-	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	userTokenService := user_token_service.UserToken{
+		ID:              userToken.ID,
+		ReqUsageAmount:  userToken.ReqUsageAmount,
+		RespUsageAmount: userToken.RespUsageAmount,
+		Uid:             userToken.Uid,
+		LaID:            userToken.LaID,
+		IsStatic:        userToken.IsStatic,
+		DataCenter:      userToken.DataCenter,
+		PsID:            userToken.PsID,
+	}
 	reqBytes, _ := httputil.DumpRequest(req, true)
 	//
 	RmProxyHeaders(req)
@@ -146,7 +155,16 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 		_ = Client.Close()
 	}()
 	// 字节数
-	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	userTokenService := user_token_service.UserToken{
+		ID:              userToken.ID,
+		ReqUsageAmount:  userToken.ReqUsageAmount,
+		RespUsageAmount: userToken.RespUsageAmount,
+		Uid:             userToken.Uid,
+		LaID:            userToken.LaID,
+		IsStatic:        userToken.IsStatic,
+		DataCenter:      userToken.DataCenter,
+		PsID:            userToken.PsID,
+	}
 	n, err := io.Copy(Remote, Client)
 	if n > 0 {
 		if action == 1 {
@@ -165,7 +183,16 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 // OnlyHttp proxy handles http connections
 func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.ResponseWriter, req *http.Request, userToken *models.UserToken) {
 	// request 字节数
-	userTokenService := user_token_service.UserToken{ID: userToken.ID, ReqUsageAmount: userToken.ReqUsageAmount, RespUsageAmount: userToken.RespUsageAmount}
+	userTokenService := user_token_service.UserToken{
+		ID:              userToken.ID,
+		ReqUsageAmount:  userToken.ReqUsageAmount,
+		RespUsageAmount: userToken.RespUsageAmount,
+		Uid:             userToken.Uid,
+		LaID:            userToken.LaID,
+		IsStatic:        userToken.IsStatic,
+		DataCenter:      userToken.DataCenter,
+		PsID:            userToken.PsID,
+	}
 	reqBytes, _ := httputil.DumpRequest(req, true)
 	//
 	RmProxyHeaders(req)

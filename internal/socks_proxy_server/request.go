@@ -98,7 +98,16 @@ func (r *Request) Process() {
 func (r *Request) transformTCP() {
 	logging.Log.Infof("[%s]connect to: %s", "tcp", r.remoteAddr)
 
-	userTokenService := user_token_service.UserToken{ID: r.tcpGram.userToken.ID, ReqUsageAmount: r.tcpGram.userToken.ReqUsageAmount, RespUsageAmount: r.tcpGram.userToken.RespUsageAmount}
+	userTokenService := user_token_service.UserToken{
+		ID:              r.tcpGram.userToken.ID,
+		ReqUsageAmount:  r.tcpGram.userToken.ReqUsageAmount,
+		RespUsageAmount: r.tcpGram.userToken.RespUsageAmount,
+		Uid:             r.tcpGram.userToken.Uid,
+		LaID:            r.tcpGram.userToken.LaID,
+		IsStatic:        r.tcpGram.userToken.IsStatic,
+		DataCenter:      r.tcpGram.userToken.DataCenter,
+		PsID:            r.tcpGram.userToken.PsID,
+	}
 	done := make(chan int)
 	go func() {
 		defer func() { _ = r.Close(); done <- 0 }()
