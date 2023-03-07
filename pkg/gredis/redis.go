@@ -334,3 +334,27 @@ func Rpop(key string) (string, error) {
 	}
 	return reply, nil
 }
+
+// Zadd a key value to zadd by Int score
+func ZaddByInt(key string, score int, value string) (int, error) {
+	conn := RedisConn.Get()
+	defer conn.Close()
+
+	reply, err := redis.Int(conn.Do("ZADD", redis.Args{}.Add(key).AddFlat(score).AddFlat(value)...))
+	if err != nil {
+		return reply, err
+	}
+	return reply, nil
+}
+
+// Zadd a key value to zadd by Float score
+func ZaddByFloat(key string, score float64, value string) (int, error) {
+	conn := RedisConn.Get()
+	defer conn.Close()
+
+	reply, err := redis.Int(conn.Do("ZADD", redis.Args{}.Add(key).AddFlat(score).AddFlat(value)...))
+	if err != nil {
+		return reply, err
+	}
+	return reply, nil
+}
