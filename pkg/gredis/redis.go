@@ -358,3 +358,16 @@ func ZaddByFloat(key string, score float64, value string) (int, error) {
 	}
 	return reply, nil
 }
+
+// zscore
+func Zscore(key string, value string) (int, error) {
+	conn := RedisConn.Get()
+	defer conn.Close()
+	score := 0
+
+	score, err := redis.Int(conn.Do("ZSCORE", redis.Args{}.Add(key).AddFlat(value)...))
+	if err != nil {
+		return score, err
+	}
+	return score, nil
+}

@@ -2,6 +2,7 @@ package e
 
 // Proxy
 const (
+	CACHE_USER           = "CACHE_USER"
 	CACHE_USER_TOKEN     = "CACHE_USER_TOKEN"
 	CACHE_IP             = "IP"
 	CACHE_PROXY_IP       = "CACHE_PROXY_IP"

@@ -12,6 +12,7 @@ import (
 	"proxy-forward/internal/models"
 	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/logging"
+	"runtime"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -45,7 +46,12 @@ func NewHandlerServer() *HttpProxyServer {
 func (hs *HandlerServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
-			logging.Log.Warnf("HandlerServer.ServeHTTP panic: %+v", err)
+			_, fileName, line, ok := runtime.Caller(0)
+			if ok {
+				logging.Log.Warnf("HandlerServer.ServeHTTP panic: %+v, file: %s, line: %d", err, fileName, line)
+			} else {
+				logging.Log.Warnf("HandlerServer.ServeHTTP panic: %+v", err)
+			}
 			rw.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
@@ -116,7 +122,8 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 	respBytes, _ := httputil.DumpResponse(resp, true)
 	// sock reesponse 字节数
 	userTokenService.IncrRespBytes(req.URL.Host, len(respBytes))
-	userTokenService.SetRespUsageKey(userToken.ID)
+	// userTokenService.SetRespUsageKey(userToken.ID)
+	userTokenService.SetReqUsageKey(userToken.ID)
 
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
@@ -172,7 +179,8 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 			userTokenService.SetReqUsageKey(userToken.ID)
 		} else if action == 2 {
 			userTokenService.IncrRespBytes(host, int(n))
-			userTokenService.SetRespUsageKey(userToken.ID)
+			// userTokenService.SetRespUsageKey(userToken.ID)
+			userTokenService.SetReqUsageKey(userToken.ID)
 		}
 	}
 	if err != nil && err != io.EOF {
@@ -213,7 +221,8 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 	respBytes, _ := httputil.DumpResponse(resp, true)
 	// response 字节数
 	userTokenService.IncrRespBytes(req.URL.Host, len(respBytes))
-	userTokenService.SetRespUsageKey(userToken.ID)
+	// userTokenService.SetRespUsageKey(userToken.ID)
+	userTokenService.SetReqUsageKey(userToken.ID)
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
 		return

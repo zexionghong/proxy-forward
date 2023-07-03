@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"proxy-forward/internal/models"
+	"proxy-forward/internal/service/user_service"
 	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/logging"
 	"strings"
@@ -80,6 +81,14 @@ func Verify(username, password string) (*models.UserToken, bool) {
 			return nil, false
 		}
 		if userToken.ID == 0 {
+			return nil, false
+		}
+		userService := user_service.User{Uid: userToken.Uid}
+		user, err := userService.Get()
+		if err != nil {
+			return nil, false
+		}
+		if user.IsUse == 0 {
 			return nil, false
 		}
 		return userToken, true

@@ -122,7 +122,8 @@ func (r *Request) transformTCP() {
 					break
 				}
 				userTokenService.IncrRespBytes(r.remoteAddr, ln)
-				userTokenService.SetRespUsageKey(r.tcpGram.userToken.ID)
+				// userTokenService.SetRespUsageKey(r.tcpGram.userToken.ID)
+				userTokenService.SetReqUsageKey(r.tcpGram.userToken.ID)
 			}
 		}
 	}()

@@ -7,6 +7,7 @@ import (
 	"proxy-forward/internal/service/ip_service"
 	"proxy-forward/internal/service/proxy_ip_service"
 	"proxy-forward/internal/service/proxy_machine_service"
+	"proxy-forward/internal/service/user_service"
 	"proxy-forward/internal/service/user_token_service"
 	"proxy-forward/pkg/utils"
 	"strconv"
@@ -31,6 +32,14 @@ func Verify(username, password string) (*models.UserToken, bool) {
 		if userToken.ID == 0 {
 			return nil, false
 		}
+		userService := user_service.User{Uid: userToken.Uid}
+		user, err := userService.Get()
+		if err != nil {
+			return nil, false
+		}
+		if user.IsUse == 0 {
+			return nil, false
+		}
 		return userToken, true
 	}
 	return nil, false
@@ -46,7 +55,7 @@ func LoadRemoteAddr(userToken *models.UserToken) (string, string, string, error)
 	}
 	if userToken.IsDeleted == 1 {
 		return "", "", "", errors.New("load remote addr fail.")
-	} 
+	}
 	proxyIPService := proxy_ip_service.ProxyIP{ID: userToken.PiID}
 	proxyIP, err := proxyIPService.GetByID()
 	if err != nil {

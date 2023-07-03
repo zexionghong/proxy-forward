@@ -129,14 +129,24 @@ func (u *UserToken) SetReqUsageKey(id int) error {
 	// key := "REQ_USAGE_TOKEN_IDS"
 	// _, err := gredis.Sadd(key, strconv.Itoa(id))
 	key := "REQ_USAGE_TOKEN_SORTED_IDS"
-	_, err := gredis.ZaddByInt(key, int(time.Now().Unix()), strconv.Itoa(id))
-	return err
+	score, _ := gredis.Zscore(key, strconv.Itoa(id))
+	if score > 0 {
+		return nil
+	} else {
+		_, err := gredis.ZaddByInt(key, int(time.Now().Unix()), strconv.Itoa(id))
+		return err
+	}
 }
 
 func (u *UserToken) SetRespUsageKey(id int) error {
 	// key := "RESP_USAGE_TOKEN_IDS"
 	// _, err := gredis.Sadd(key, strconv.Itoa(id))
 	key := "RESP_USAGE_TOKEN_SORTED_IDS"
-	_, err := gredis.ZaddByInt(key, int(time.Now().Unix()), strconv.Itoa(id))
-	return err
+	score, _ := gredis.Zscore(key, strconv.Itoa(id))
+	if score > 0 {
+		return nil
+	} else {
+		_, err := gredis.ZaddByInt(key, int(time.Now().Unix()), strconv.Itoa(id))
+		return err
+	}
 }
