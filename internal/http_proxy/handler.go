@@ -113,6 +113,8 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 	defer resp.Body.Close()
 	userTokenService.IncrReqBytes(req.URL.Host, len(reqBytes))
 	userTokenService.SetReqUsageKey(userToken.ID)
+	// 汇总当天总流量
+	userTokenService.CollectReqUsage(userToken.ID, userToken.PiID, userToken.IsStatic, userToken.DataCenter, len(reqBytes))
 
 	ClearHeaders(rw.Header())
 	CopyHeaders(rw.Header(), resp.Header)
@@ -124,6 +126,8 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 	userTokenService.IncrRespBytes(req.URL.Host, len(respBytes))
 	// userTokenService.SetRespUsageKey(userToken.ID)
 	userTokenService.SetReqUsageKey(userToken.ID)
+	// 汇总当天总流量
+	userTokenService.CollectRespUsage(userToken.ID, userToken.PiID, userToken.IsStatic, userToken.DataCenter, len(respBytes))
 
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
@@ -177,10 +181,15 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 		if action == 1 {
 			userTokenService.IncrReqBytes(host, int(n))
 			userTokenService.SetReqUsageKey(userToken.ID)
+			// 汇总当天总流量
+			userTokenService.CollectReqUsage(userToken.ID, userToken.PiID, userToken.IsStatic, userToken.DataCenter, int(n))
+
 		} else if action == 2 {
 			userTokenService.IncrRespBytes(host, int(n))
 			// userTokenService.SetRespUsageKey(userToken.ID)
 			userTokenService.SetReqUsageKey(userToken.ID)
+			// 汇总当天总流量
+			userTokenService.CollectRespUsage(userToken.ID, userToken.PiID, userToken.IsStatic, userToken.DataCenter, int(n))
 		}
 	}
 	if err != nil && err != io.EOF {
@@ -212,6 +221,8 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 	defer resp.Body.Close()
 	userTokenService.IncrReqBytes(req.URL.Host, len(reqBytes))
 	userTokenService.SetReqUsageKey(userToken.ID)
+	// 汇总当天总流量
+	userTokenService.CollectReqUsage(userToken.ID, userToken.PiID, userToken.IsStatic, userToken.DataCenter, len(reqBytes))
 
 	ClearHeaders(rw.Header())
 	CopyHeaders(rw.Header(), resp.Header)
@@ -223,6 +234,8 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 	userTokenService.IncrRespBytes(req.URL.Host, len(respBytes))
 	// userTokenService.SetRespUsageKey(userToken.ID)
 	userTokenService.SetReqUsageKey(userToken.ID)
+	// 汇总当天总流量
+	userTokenService.CollectRespUsage(userToken.ID, userToken.PiID, userToken.IsStatic, userToken.DataCenter, len(respBytes))
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil && err != io.EOF {
 		return
