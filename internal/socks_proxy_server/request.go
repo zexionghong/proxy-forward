@@ -103,10 +103,10 @@ func (r *Request) transformTCP() {
 		ReqUsageAmount:  r.tcpGram.userToken.ReqUsageAmount,
 		RespUsageAmount: r.tcpGram.userToken.RespUsageAmount,
 		Uid:             r.tcpGram.userToken.Uid,
-		LaID:            r.tcpGram.userToken.LaID,
-		IsStatic:        r.tcpGram.userToken.IsStatic,
-		DataCenter:      r.tcpGram.userToken.DataCenter,
-		PsID:            r.tcpGram.userToken.PsID,
+		//LaID:            r.tcpGram.userToken.LaID,
+		IsStatic:   r.tcpGram.userToken.IsStatic,
+		DataCenter: r.tcpGram.userToken.DataCenter,
+		//PsID:            r.tcpGram.userToken.PsID,
 	}
 	done := make(chan int)
 	go func() {

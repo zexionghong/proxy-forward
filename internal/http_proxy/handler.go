@@ -97,10 +97,10 @@ func (hs *HandlerServer) HttpHandler(travel *proxy.ProxyServer, rw http.Response
 		ReqUsageAmount:  userToken.ReqUsageAmount,
 		RespUsageAmount: userToken.RespUsageAmount,
 		Uid:             userToken.Uid,
-		LaID:            userToken.LaID,
-		IsStatic:        userToken.IsStatic,
-		DataCenter:      userToken.DataCenter,
-		PsID:            userToken.PsID,
+		//LaID:            userToken.LaID,
+		IsStatic:   userToken.IsStatic,
+		DataCenter: userToken.DataCenter,
+		//PsID:            userToken.PsID,
 	}
 	reqBytes, _ := httputil.DumpRequest(req, true)
 	//
@@ -171,10 +171,10 @@ func copyRemoteToClient(Remote, Client net.Conn, userToken *models.UserToken, ac
 		ReqUsageAmount:  userToken.ReqUsageAmount,
 		RespUsageAmount: userToken.RespUsageAmount,
 		Uid:             userToken.Uid,
-		LaID:            userToken.LaID,
-		IsStatic:        userToken.IsStatic,
-		DataCenter:      userToken.DataCenter,
-		PsID:            userToken.PsID,
+		//LaID:            userToken.LaID,
+		IsStatic:   userToken.IsStatic,
+		DataCenter: userToken.DataCenter,
+		//PsID:            userToken.PsID,
 	}
 	n, err := io.Copy(Remote, Client)
 	if n > 0 {
@@ -205,10 +205,10 @@ func (hs *HandlerServer) OnlyHttpHandler(travel *proxy.ProxyServer, rw http.Resp
 		ReqUsageAmount:  userToken.ReqUsageAmount,
 		RespUsageAmount: userToken.RespUsageAmount,
 		Uid:             userToken.Uid,
-		LaID:            userToken.LaID,
-		IsStatic:        userToken.IsStatic,
-		DataCenter:      userToken.DataCenter,
-		PsID:            userToken.PsID,
+		//LaID:            userToken.LaID,
+		IsStatic:   userToken.IsStatic,
+		DataCenter: userToken.DataCenter,
+		//PsID:            userToken.PsID,
 	}
 	reqBytes, _ := httputil.DumpRequest(req, true)
 	//

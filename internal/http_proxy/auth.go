@@ -16,7 +16,7 @@ var (
 	ERR_LOGIN_IN   = errors.New("fail to login")
 )
 
-//Auth provides basic authorization for handler server.
+// Auth provides basic authorization for handler server.
 func (hs *HandlerServer) Auth(rw http.ResponseWriter, req *http.Request) (*models.UserToken, bool) {
 	userToken, err := hs.auth(rw, req)
 	if err != nil {
@@ -88,7 +88,7 @@ func Verify(username, password string) (*models.UserToken, bool) {
 		if err != nil {
 			return nil, false
 		}
-		if user.IsUse == 0 {
+		if !user.IsUse {
 			return nil, false
 		}
 		return userToken, true

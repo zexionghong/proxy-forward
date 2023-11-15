@@ -1,6 +1,7 @@
 package socks_proxy_server
 
 import (
+	"fmt"
 	"net"
 	"proxy-forward/config"
 	"proxy-forward/pkg/logging"
@@ -19,7 +20,12 @@ type Server struct {
 
 // NewServer return a new server.
 func NewServer() *Server {
-	addr, err := net.ResolveTCPAddr("tcp", config.RuntimeViper.GetString("socks_proxy_server.port"))
+	fmt.Print(config.RuntimeViper.GetString("socks_proxy_server.port"))
+	port := config.RuntimeViper.GetString("socks_proxy_server.port")
+	if port == "" {
+		port = ":3333"
+	}
+	addr, err := net.ResolveTCPAddr("tcp", port)
 	if err != nil {
 		logging.Log.Fatal(err.Error())
 	}

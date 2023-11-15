@@ -26,8 +26,8 @@ type UserToken struct {
 	ReqUsageAmount  int
 	RespUsageAmount int
 	PsID            int
-	IsStatic        int
-	DataCenter      int
+	IsStatic        bool
+	DataCenter      bool
 	LaID            int
 	Uid             int
 }
@@ -49,6 +49,7 @@ func (u *UserToken) Get() (*models.UserToken, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(userToken.PassWord)
 	gredis.Set(key, userToken, 120)
 	return userToken, nil
 }
@@ -56,19 +57,19 @@ func (u *UserToken) Get() (*models.UserToken, error) {
 func (u *UserToken) IncrReqBytes(remoteAddr string, length int) error {
 	// usage statistics
 	// data := map[string]interface{}{
-	data := bson.M{
-		"remote_addr":   remoteAddr,
-		"usage":         length,
-		"user_token_id": u.ID,
-		"type":          "req",
-		"ps_id":         u.PsID,
-		"la_id":         u.LaID,
-		"is_static":     u.IsStatic,
-		"data_center":   u.DataCenter,
-		"uid":           u.Uid,
-		"timestamp":     int64(time.Now().Unix()),
-	}
-	gmongo.SaveForwardData(data)
+	//data := bson.M{
+	//	"remote_addr":   remoteAddr,
+	//	"usage":         length,
+	//	"user_token_id": u.ID,
+	//	"type":          "req",
+	//	"ps_id":         u.PsID,
+	//	"la_id":         u.LaID,
+	//	"is_static":     u.IsStatic,
+	//	"data_center":   u.DataCenter,
+	//	"uid":           u.Uid,
+	//	"timestamp":     int64(time.Now().Unix()),
+	//}
+	// gmongo.SaveForwardData(data)
 	// gcelery.SendForwardDataTask(data)
 	cache := cache_service.UserToken{ID: u.ID}
 	key := cache.GetIncrReqKey()
@@ -155,7 +156,7 @@ func (u *UserToken) SetRespUsageKey(id int) error {
 	}
 }
 
-func (u *UserToken) CollectReqUsage(id int, piID int, isStatic int, dataCenter int, length int) error {
+func (u *UserToken) CollectReqUsage(id int, piID int, isStatic bool, dataCenter bool, length int) error {
 	proxyIPService := proxy_ip_service.ProxyIP{ID: piID}
 	proxyIP, err := proxyIPService.GetByID()
 	if err != nil {
@@ -163,25 +164,25 @@ func (u *UserToken) CollectReqUsage(id int, piID int, isStatic int, dataCenter i
 	}
 	var incrReqKey = ""
 	today := coarsetime.CeilingTimezoneTimeNowYYMMDD(0)
-	if isStatic == 0 {
+	if !isStatic {
 		// 动态代理
-		if proxyIP.ForwardPort == 22225 { // luminati 线路2
+		if proxyIP.Port == 22225 { // luminati 线路2
 			incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_LUMINATI_RESIDENTIAL_USAGE_REQ, today)
-		} else if proxyIP.ForwardPort == 7777 { // oxylab 线路1
+		} else if proxyIP.Port == 7777 { // oxylab 线路1
 			incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_OXYLAB_RESIDENTIAL_USAGE_REQ, today)
 		} else {
 			incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_922_RESIDENTIAL_USAGE_REQ, today)
 		}
-	} else if isStatic == 1 {
+	} else if isStatic {
 		// 静态代理
-		if dataCenter == 0 {
-			if proxyIP.ForwardPort == 22225 { // luminati
+		if !dataCenter {
+			if proxyIP.Port == 22225 { // luminati
 				incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_LUMINATI_ISP_USAGE_REQ, today)
 			} else { // iproyal
 				incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_IPROYAL_ISP_USAGE_REQ, today)
 			}
-		} else if dataCenter == 1 { //机房代理
-			if proxyIP.ForwardPort == 22225 {
+		} else if dataCenter { //机房代理
+			if proxyIP.Port == 22225 {
 				incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_LUMINATI_DATACENTER_USAGE_REQ, today)
 			} else { // instant_proxy
 				incrReqKey = fmt.Sprintf("%s_%d", e.CACHE_INSTANTPROXIES_USAGE_REQ, today)
@@ -195,7 +196,7 @@ func (u *UserToken) CollectReqUsage(id int, piID int, isStatic int, dataCenter i
 	return nil
 }
 
-func (u *UserToken) CollectRespUsage(id int, piID int, isStatic int, dataCenter int, length int) error {
+func (u *UserToken) CollectRespUsage(id int, piID int, isStatic bool, dataCenter bool, length int) error {
 	proxyIPService := proxy_ip_service.ProxyIP{ID: piID}
 	proxyIP, err := proxyIPService.GetByID()
 	if err != nil {
@@ -203,25 +204,25 @@ func (u *UserToken) CollectRespUsage(id int, piID int, isStatic int, dataCenter 
 	}
 	var incrRespKey = ""
 	today := coarsetime.CeilingTimezoneTimeNowYYMMDD(0)
-	if isStatic == 0 {
+	if !isStatic {
 		// 动态代理
-		if proxyIP.ForwardPort == 22225 { // luminati 线路2
+		if proxyIP.Port == 22225 { // luminati 线路2
 			incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_LUMINATI_RESIDENTIAL_USAGE_RESP, today)
-		} else if proxyIP.ForwardPort == 7777 { // oxylab 线路1
+		} else if proxyIP.Port == 7777 { // oxylab 线路1
 			incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_OXYLAB_RESIDENTIAL_USAGE_RESP, today)
 		} else {
 			incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_922_RESIDENTIAL_USAGE_RESP, today)
 		}
-	} else if isStatic == 1 {
+	} else if isStatic {
 		// 静态代理
-		if dataCenter == 0 {
-			if proxyIP.ForwardPort == 22225 { // luminati
+		if !dataCenter {
+			if proxyIP.Port == 22225 { // luminati
 				incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_LUMINATI_ISP_USAGE_RESP, today)
 			} else { // iproyal
 				incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_IPROYAL_ISP_USAGE_RESP, today)
 			}
-		} else if dataCenter == 1 { //机房代理
-			if proxyIP.ForwardPort == 22225 {
+		} else if dataCenter { //机房代理
+			if proxyIP.Port == 22225 {
 				incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_LUMINATI_DATACENTER_USAGE_RESP, today)
 			} else { // instant_proxy
 				incrRespKey = fmt.Sprintf("%s_%d", e.CACHE_INSTANTPROXIES_USAGE_RESP, today)

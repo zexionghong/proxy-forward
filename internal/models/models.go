@@ -2,35 +2,33 @@ package models
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"proxy-forward/config"
 	"proxy-forward/pkg/logging"
 	"time"
-
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 var db *gorm.DB
 
 type Model struct {
-	ID         int `gorm:"primary_key" json:"id"`
-	CreatedOn  int `json:"created_on"`
-	ModifiedOn int `json:"modified_on"`
-	DeletedOn  int `json:"deleted_on"`
+	ID        int `gorm:"primary_key" json:"id"`
+	CreatedOn int `json:"created_on"`
+	UpdatedOn int `json:"updated_on"`
+	DeletedOn int `json:"deleted_on"`
 }
 
 // Setup initializes the database instance
 func Setup() {
 	var err error
-	db, err = gorm.Open(config.RuntimeViper.GetString("database.dialect"), fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=true&loc=%s",
-		config.RuntimeViper.GetString("database.user"),
-		config.RuntimeViper.GetString("database.password"),
-		config.RuntimeViper.GetString("database.host"),
-		config.RuntimeViper.GetInt("database.port"),
-		config.RuntimeViper.GetString("database.database"),
-		config.RuntimeViper.GetString("database.charset"),
-		config.RuntimeViper.GetString("database.local"),
-	))
+	db, err = gorm.Open(config.RuntimeViper.GetString("database.dialect"),
+		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			config.RuntimeViper.GetString("database.host"),
+			config.RuntimeViper.GetInt("database.port"),
+			config.RuntimeViper.GetString("database.user"),
+			config.RuntimeViper.GetString("database.password"),
+			config.RuntimeViper.GetString("database.database"),
+		))
 	if err != nil {
 		logging.Log.Fatalf("models.Setup err: %v", err)
 	}

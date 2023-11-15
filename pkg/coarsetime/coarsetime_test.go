@@ -2,7 +2,6 @@ package coarsetime
 
 import (
 	"testing"
-	"time"
 )
 
 func TestCeilingTimezoneTimeNow(t *testing.T) {
@@ -33,10 +32,10 @@ func TestCeilingTimezoneTimeNow(t *testing.T) {
 	t.Log(CeilingTimezoneTimeNow(-12))
 }
 
-func TestCeilingTimezoneTime(t *testing.T) {
-	ctx, _ := time.Parse("15:04:05", "23:00:00")
-	t.Log(ctx)
-	startTime := CeilingTimezone(ctx)
-	endTime := CeilingTimeNow()
-	t.Log(startTime.Unix(), endTime.Unix())
-}
+//func TestCeilingTimezoneTime(t *testing.T) {
+//	ctx, _ := time.Parse("15:04:05", "23:00:00")
+//	t.Log(ctx)
+//	startTime := CeilingTimezone(ctx)
+//	endTime := CeilingTimeNow()
+//	t.Log(startTime.Unix(), endTime.Unix())
+//}

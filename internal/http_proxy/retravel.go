@@ -5,13 +5,8 @@ import (
 	"net/http"
 	"proxy-forward/internal/http_proxy/proxy"
 	"proxy-forward/internal/models"
-	"proxy-forward/internal/service/ip_service"
 	"proxy-forward/internal/service/proxy_ip_service"
-	"proxy-forward/internal/service/proxy_machine_service"
-	"proxy-forward/internal/service/proxy_supplier_service"
 	"proxy-forward/pkg/logging"
-	"proxy-forward/pkg/utils"
-	"strconv"
 )
 
 func init() {
@@ -32,13 +27,18 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, errors.New("userToken is nil")
 	}
-	if userToken.Expired == 1 {
+	if userToken.Expired {
 		Unavailable(rw)
 		return nil, errors.New("userToken was expired")
 	}
-	if userToken.IsDeleted == 1 {
+	if userToken.IsDeleted {
 		Unavailable(rw)
 		return nil, errors.New("proxy unavailable")
+	}
+
+	if !userToken.IsUse {
+		Unavailable(rw)
+		return nil, errors.New("token close")
 	}
 	var (
 		remoteAddr string
@@ -50,58 +50,55 @@ func (hs *HandlerServer) loadTraveling(userToken *models.UserToken, rw http.Resp
 		Unavailable(rw)
 		return nil, err
 	}
-	if proxyIP.Online != 1 || proxyIP.Health != 1 || proxyIP.Status != 1 {
-		Unavailable(rw)
-		return nil, errors.New("proxy unavailable")
-	}
-	proxyMachineService := proxy_machine_service.ProxyMachine{ID: proxyIP.PmID}
-	proxyMachine, err := proxyMachineService.GetByID()
-	if err != nil {
-		Unavailable(rw)
-		return nil, err
-	}
-	proxySupplierService := proxy_supplier_service.ProxySupplier{ID: proxyMachine.PsID}
-	proxySupplier, err := proxySupplierService.GetByID()
-	if err != nil {
-		Unavailable(rw)
-		return nil, err
-	}
-	// luminati 直接调用域名
-	if proxyMachine.IpID == 0 {
-		if proxyMachine.Domain == "" {
-			Unavailable(rw)
-			return nil, err
-		}
-		remoteAddr = proxyMachine.Domain
-	} else {
-		ipService := ip_service.IP{ID: proxyMachine.IpID}
-		iP, err := ipService.GetByID()
-		if err != nil {
-			Unavailable(rw)
-			return nil, err
-		}
-		if iP.IpAddress == "" {
-			remoteAddr = utils.InetNtoA(iP.IpAddr)
-		} else {
-			ipAddress, err := strconv.ParseInt(iP.IpAddress, 16, 0)
-			if err != nil {
-				return nil, err
-			}
-			remoteAddr = utils.InetNtoA(ipAddress)
-		}
-	}
+	//if proxyIP.Online != 1 || proxyIP.Health != 1 || proxyIP.Status != 1 {
+	//	Unavailable(rw)
+	//	return nil, errors.New("proxy unavailable")
+	//}
+	//proxyMachineService := proxy_machine_service.ProxyMachine{ID: proxyIP.PmID}
+	//proxyMachine, err := proxyMachineService.GetByID()
+	//if err != nil {
+	//	Unavailable(rw)
+	//	return nil, err
+	//}
+	//proxySupplierService := proxy_supplier_service.ProxySupplier{ID: proxyMachine.PsID}
+	//proxySupplier, err := proxySupplierService.GetByID()
+	//if err != nil {
+	//	Unavailable(rw)
+	//	return nil, err
+	//}
+	//// luminati 直接调用域名
+	//if proxyMachine.IpID == 0 {
+	//	if proxyMachine.Domain == "" {
+	//		Unavailable(rw)
+	//		return nil, err
+	//	}
+	//	remoteAddr = proxyMachine.Domain
+	//} else {
+	//	ipService := ip_service.IP{ID: proxyMachine.IpID}
+	//	iP, err := ipService.GetByID()
+	//	if err != nil {
+	//		Unavailable(rw)
+	//		return nil, err
+	//	}
+	//	if iP.IpAddress == "" {
+	//		remoteAddr = utils.InetNtoA(iP.IpAddr)
+	//	} else {
+	//		ipAddress, err := strconv.ParseInt(iP.IpAddress, 16, 0)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//		remoteAddr = utils.InetNtoA(ipAddress)
+	//	}
+	//}
+	remoteAddr = proxyIP.Host
 
 	var username, password string
-	if userToken.IsApi == 1 {
-		username = proxyIP.Username + userToken.Suffix
-		password = proxyIP.Password
-	} else {
-		username = proxyIP.Username
-		password = proxyIP.Password
-	}
 
-	port = proxyIP.ForwardPort
-	travel, ok := Connection(remoteAddr, port, username, password, proxySupplier.OnlyHttp)
+	username = proxyIP.Username
+	password = proxyIP.Password
+
+	port = proxyIP.Port
+	travel, ok := Connection(remoteAddr, port, username, password)
 	if !ok {
 		Unavailable(rw)
 		return nil, err
@@ -125,11 +122,11 @@ func Unavailable(rw http.ResponseWriter) {
 }
 
 // build tcp connection to remoteAddr:port
-func Connection(remoteAddr string, port int, username, password string, onlyHttp int) (*proxy.ProxyServer, bool) {
+func Connection(remoteAddr string, port int, username, password string) (*proxy.ProxyServer, bool) {
 	if remoteAddr == "" || port == 0 {
 		return nil, false
 	}
-	proxyServer, err := proxy.NewProxyServer(remoteAddr, port, username, password, onlyHttp)
+	proxyServer, err := proxy.NewProxyServer(remoteAddr, port, username, password)
 	if err != nil {
 		return nil, false
 	}
