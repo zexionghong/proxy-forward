@@ -91,6 +91,13 @@ func Verify(username, password string) (*models.UserToken, bool) {
 		if !user.IsUse {
 			return nil, false
 		}
+		use, err := models.CanUse(userToken.Uid)
+		if err != nil {
+			return nil, false
+		}
+		if !use {
+			return nil, false
+		}
 		return userToken, true
 	}
 	return nil, false

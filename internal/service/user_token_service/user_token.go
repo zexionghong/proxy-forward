@@ -49,7 +49,6 @@ func (u *UserToken) Get() (*models.UserToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(userToken.PassWord)
 	gredis.Set(key, userToken, 120)
 	return userToken, nil
 }
